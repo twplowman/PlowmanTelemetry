@@ -5,6 +5,7 @@ import mysql.connector
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import os
+import mplleaflet
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
@@ -12,7 +13,7 @@ def MysqlConfig():
         mysqlconfig = {
                 'host':'localhost',
                 'user':'root',
-                'password':'bR0m3lIad2021!!',
+                'password':'',
                 'database':'mysql_test'
                 }
         return mysqlconfig
@@ -355,7 +356,7 @@ def boxRoute(name):
         boxNumber = name
         
         #Getting datetime
-        dateTimeOneDay = datetime.now() - timedelta(days = 1)
+        dateTimeOneDay = datetime.now() - timedelta(days = 30)
         dateTime = dateTimeOneDay.strftime('%Y-%m-%d %H:%M:%S')
         dateTimeNow = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
@@ -403,7 +404,7 @@ def login():
 
 @app.route('/formtest',methods=['GET','POST'])
 def formtest():
-        pass
+    return "hello"
 
 @app.route('/logout')
 def logout():
