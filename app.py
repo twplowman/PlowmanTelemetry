@@ -206,7 +206,7 @@ def LastPacketTime(table,boxNumber,**kwargs):
 			return readableDate
 		if kwargs.get('status'): #if we want to check ONLINE/OFFLINE
 			readableDate = ConvertToReadableTime((datetime[0]))
-			if PacketAge(10,datetime[0]): #Pass in 20 minutes, we can expose and change this later
+			if PacketAge(100,datetime[0]): #Pass in 20 minutes, we can expose and change this later
 				readableDate = readableDate + " || ONLINE "
 			else:
 				readableDate = readableDate + " || OFFLINE "
@@ -219,7 +219,7 @@ def LastPacketTime(table,boxNumber,**kwargs):
 # dateTime = time to evaluate (e.g. last packet from sql server)
 # returns true or false based upon defined allowable range in minutes.
 def PacketAge(timeMinutes,dateTime): 
-    difference = (datetime.now() - dateTime) - timedelta(minutes = timeMinutes)
+    difference = (datetime.utcnow() - dateTime) - timedelta(minutes = timeMinutes)
     #print(difference)
     if difference < timedelta(0):
         return True
@@ -356,12 +356,12 @@ def boxRoute(name):
         boxNumber = name
         
         #Getting datetime
-        dateTimeOneDay = datetime.now() - timedelta(days = 30)
+        dateTimeOneDay = datetime.utcnow() - timedelta(days = 30)
         dateTime = dateTimeOneDay.strftime('%Y-%m-%d %H:%M:%S')
-        dateTimeNow = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        dateTimeNow = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         
         #calculating graphs
-        sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
+        #sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
         sqlGenerateTempGraph(table,dateTimeNow,dateTime,boxNumber+".png")
         
         #get general details
@@ -421,7 +421,7 @@ def AccessDenied():
 from werkzeug.debug import DebuggedApplication
 app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-app.debug = True
+app.debug = False
 
 
 if __name__ == "__main__":
