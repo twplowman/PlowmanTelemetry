@@ -4,6 +4,8 @@ from flask import Flask,jsonify, session, redirect, render_template , url_for, r
 import mysql.connector
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import os
 import mplleaflet
 app = Flask(__name__)
