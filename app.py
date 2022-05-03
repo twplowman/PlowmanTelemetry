@@ -158,8 +158,8 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
-    systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
-    #systemStatement = "mv "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
+    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+    systemStatement = "mv "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
     print(systemStatement)
     os.system(systemStatement)
     
