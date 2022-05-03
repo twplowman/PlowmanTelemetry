@@ -73,75 +73,58 @@
           </div>
         </div>
 
-        <script type="text/javascript">
-          /*
-        <div class = card-container id = four >
-
-
-          <div class= flex-container> 
-            <img  src="{{ url_for('static', filename='maps/'+ mapHTML + '.png' )}}" alt=""/> 
+        <div class = card-container id = six >
+          <div class = flex-container > 
+            <div class = info-container > 
+              <div class = info-data id = sensorsOnline > {{sensorsOnline}} / 8  </div> 
+              <div class = info-title> Sensors Online </div> 
+            </div>
+            <div class = info-container> 
+              <div class = info-data id = currentLatLon> {{latitude}},{{longitude}} </div> 
+              <div class = info-title> Latitude/Longitude </div> 
+            </div>   
+            <div class = info-container> 
+              <div class = info-data id = lastPacketTime> {{lastPacket}} </div> 
+              <div class = info-title> Last Packet </div>
+            </div>
+            <div class = info-container> 
+              <div class = info-data id = namedLocation> {{location}} </div> 
+              <div class = info-title> Location </div> 
+            </div>  
           </div>
-
-
         </div>
-
         
         <div class = card-container id = five > 
 
           <div class = grid-container > 
-            
             <!-- row 1 - Titles#1 -->
             <div class = info-title> Current Temperature </div>
             <div class = info-title> Fan Status </div>
             <div class = info-title> Location </div>
-
-           
-
             <!-- row 2 - Info#1 -->
             <div class = info-data-large> {{currentTemperature}}˚C </div>
             <div class = info-data-large> {{fanStatus}} </div>
             <div class = info-data-large> {{latitude}} , {{longitude}}</div>
-
             <!-- row 3 - Accent#1 -->
             <!-- accent 1 --><div class = info-data-accent> </div>
             <!-- accent 2 --><div class = info-data-accent> </div>
             <div class = info-data-accent> Latitude      Longitude </div>
-
-
             <!-- row 4 - Title#2 -->
             <div class = info-title> Sensors Online </div>
             <div class = info-title> Fan Uptime </div>
-            <!-- title 3 --> <div class = info-title> </div>
-            
+            <!-- title 3 --> <div class = info-title> </div>      
             <div class = info-data-large> {{sensorsOnline}}/8</div>
             <div class = info-data-large> {{fanUptime}} </div>
             <div class = info-data-large> {{location}} </div>
-
-
             <!-- accent 1 --><div class = info-data-accent></div>
             <div class = info-data-accent> last 4 weeks </div>
             <!-- accent 3 --><div class = info-data-accent></div>
-
-           
-           
-            
-           
-            
-
-
-            
-
-           
           </div>
-
         </div>
-      
-            */ </script>
-
 
       </div>  
 
-    </div>
+      </div>
 
     <script>
 
