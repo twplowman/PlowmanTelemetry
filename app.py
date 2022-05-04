@@ -1,4 +1,6 @@
+from distutils.command.config import config
 import imp
+from sqlite3 import Cursor
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 import mysql.connector
 from datetime import datetime, timedelta
@@ -110,7 +112,7 @@ def PlotLivestockRoute(boxNumber, dateTime, TimeStart):
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()  # define cursor
     query = (
-        ("SELECT latitude, longitude, T1 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s AND `Box Number` = %s;")
+        ("SELECT latitude, longitude, T1 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s AND `Box Number` = %s ORDER BY DateTime;")
     )  # AND `Box Number` = %s;") #construct query
     cursor.execute(
         query,
@@ -353,6 +355,17 @@ def GetSummaryDetails(boxNumber):
         ]
     return result
 
+def GetAllBoxNumbers():
+    config = MysqlConfig()
+    mydb = mysql.connector.connect(**config)
+    cursor = mydb.cursor()
+    query = "SELECT BoxNumber FROM PBL_Telemetry_Summary;"
+    cursor.execute(query)
+    livestockBoxes = []
+    for BoxNumber in cursor:
+        livestockBoxes.append(BoxNumber[0])
+    return livestockBoxes
+
 
 # Queries the database for specific data related to chosen livestock box
 # Last Packet
@@ -382,6 +395,7 @@ def index():
         username = session.get("username")
         return redirect(url_for("boxRoute", name=username))
     return redirect(url_for("login"))
+
 
 
 # Endpoint for JMW Farms Box #001
@@ -436,6 +450,26 @@ def BoxRedirect():
             return redirect(url_for("login"))
         username = session.get("username")
         return redirect(url_for("boxRoute", name=username))
+
+
+@app.route("/Summary")
+def summary():
+    
+    #work out number of columns in summary table
+    livestockBoxes = GetAllBoxNumbers()
+    #get summary details
+    print(livestockBoxes)
+    summaryDetails = [["TotalDistance, WeeklyDistance, Customer, CustomerBoxNumber,LastPacketDistance,SensorsOnline,Average Temperature"]]
+    for BoxNumber in livestockBoxes:
+        lastPacket = LastPacketTime(BoxNumber, status=True)
+        if lastPacket is None:
+            lastPacket = [0,0,0]
+        print(lastPacket)
+        summaryDetails.append([GetSummaryDetails(BoxNumber),GetCurrentAverageTemperature(BoxNumber),LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
+        print (summaryDetails)
+    print (summaryDetails)
+    
+    return jsonify(summaryDetails)
 
 
 @app.route("/box/<string:name>", methods=["GET", "POST"])
