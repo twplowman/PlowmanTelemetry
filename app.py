@@ -1,3 +1,5 @@
+import os
+import shutil
 from distutils.command.config import config
 import imp
 from sqlite3 import Cursor
@@ -13,7 +15,6 @@ from geopy import Nominatim
 
 
 matplotlib.use("Agg")
-import os
 from numpy import average
 
 app = Flask(__name__)
@@ -161,10 +162,10 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
     #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
-    systemStatement = "mv "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
-    print(systemStatement)
-    os.system(systemStatement)
-    
+    systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
+    #print(systemStatement)
+    #os.system(systemStatement)
+    shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
 
 
 # Creates a Temperature graph based upon dateTime and boxNumber from SQL database
@@ -560,8 +561,8 @@ from werkzeug.debug import DebuggedApplication
 
 app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-app.debug = False
+app.debug = True
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0",port="8080")
