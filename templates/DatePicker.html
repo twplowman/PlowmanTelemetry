@@ -1,0 +1,86 @@
+
+<!doctype html>
+{% extends "base.html" %}
+
+
+<html>
+	{%block content %}
+
+    <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/CustomerView.css') }}">
+    <link rel="stylesheet" href="/static/css/CustomerView.css">
+    <link rel="stylesheet" href="/static/css/extra.css">
+
+
+
+
+
+
+
+
+<!-- Trigger/Open The Modal -->
+<button id="myBtn">Open Modal</button>
+<!-- The Modal -->
+<div id="myModal" class="modal">
+   <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Some text in the Modal..</p>
+  </div>
+
+
+<div id="reportrange" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+            <i class="fa fa-calendar"></i>&nbsp;
+            <span></span> <i class="fa fa-caret-down"></i>
+        </div>
+
+<input type="submit" value="submit">
+
+</div>   
+
+<script>
+
+
+
+
+
+
+        
+$(function() {
+
+    var start = moment().subtract(29, 'days');
+    var end = moment();
+
+    function cb(start, end) {
+        $('#reportrange span').html(start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm'));
+    }
+
+    $('#reportrange').daterangepicker
+    (
+        
+        {
+        startDate: start,
+        endDate: end,
+        timePicker: true,
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }
+        }, 
+        cb, 
+        {locale: {format: 'DD-MMM-YY'}}
+    );
+
+    cb(start, end);
+
+});
+</script>
+
+
+
+{%endblock%}
+</html>

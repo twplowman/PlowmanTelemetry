@@ -1,8 +1,5 @@
 import os
 import shutil
-from distutils.command.config import config
-import imp
-from sqlite3 import Cursor
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 import mysql.connector
 from datetime import datetime, timedelta
@@ -10,12 +7,9 @@ import matplotlib.pyplot as plt
 import matplotlib
 import folium
 import branca.colormap as cm
-
 from geopy import Nominatim
 
-
 matplotlib.use("Agg")
-from numpy import average
 
 app = Flask(__name__)
 app.secret_key = "A0Zr98j/3yX R~XHH!jmN]LWX/,?RT"
@@ -113,7 +107,7 @@ def PlotLivestockRoute(boxNumber, dateTime, TimeStart):
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()  # define cursor
     query = (
-        ("SELECT latitude, longitude, T1 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s AND `Box Number` = %s ORDER BY DateTime;")
+        ("SELECT latitude, longitude, T3 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s AND `Box Number` = %s ORDER BY DateTime;")
     )  # AND `Box Number` = %s;") #construct query
     cursor.execute(
         query,
@@ -161,8 +155,8 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
-    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
-    systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
+    systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+    #systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
     #print(systemStatement)
     #os.system(systemStatement)
     shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
@@ -475,51 +469,59 @@ def summary():
 
 @app.route("/box/<string:name>", methods=["GET", "POST"])
 def boxRoute(name):
-    if request.method == "GET":
-        if "username" not in session:
+    if "username" not in session:
             return redirect(url_for("login"))
 
-        if session.get("username") != name:
-            return redirect(url_for("AccessDenied"))
+    if session.get("username") != name:
+        return redirect(url_for("AccessDenied"))
 
-        # defining table to query - We always query the same table now.
-        # table = GetTableByID(name)
-        boxNumber = name
-
-        # Getting datetime
+    if request.method == "POST":
+        dateTimeOneDay = request.form.get('startDate')
+        dateTimeNow = request.form.get('endDate')
+        dateTime = dateTimeOneDay
+        #return jsonify(request.form)
+    if request.method == "GET":
         dateTimeOneDay = datetime.utcnow() - timedelta(days=1)
         dateTime = dateTimeOneDay.strftime("%Y-%m-%d %H:%M:%S")
         dateTimeNow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        
 
-        # calculating graphs
-        # sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
-        filename = boxNumber+".html"
-        RenderMap(dateTimeNow,dateTimeOneDay,boxNumber,filename)
-        sqlGenerateTempGraph(dateTimeNow, dateTime, boxNumber + ".png")
+    # defining table to query - We always query the same table now.
+    # table = GetTableByID(name)
+    boxNumber = name
 
-        # get general details
-        summaryDetails = GetSummaryDetails(boxNumber)
+    # Getting datetime
+    
 
-        # get last packet details
-        lastPacket = LastPacketTime(boxNumber, status=True)
+    # calculating graphs
+    # sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
+    filename = boxNumber+".html"
+    RenderMap(dateTimeNow,dateTimeOneDay,boxNumber,filename)
+    sqlGenerateTempGraph(dateTimeNow, dateTime, boxNumber + ".png")
 
-        templateData = {
-            "mapHTML": boxNumber,
-            "currentTemperature": GetCurrentAverageTemperature(boxNumber),
-            "totalDistance": round(summaryDetails[0]),
-            "weeklyDistance": round(summaryDetails[1]),
-            "lastPacket": lastPacket[0],
-            "customer": summaryDetails[2],
-            "customerBoxNumber": summaryDetails[3],
-            "lastPacketDistance": round(summaryDetails[4], 2),
-            "latitude": lastPacket[1],
-            "longitude": lastPacket[2],
-            "sensorsOnline": summaryDetails[5],
-            "fanUptime": "",
-            "location": LatLonNamedLocation(lastPacket[1],lastPacket[2]),
-        }
-        #return jsonify(templateData)
-        return render_template("CustomerView.html", **templateData)
+    # get general details
+    summaryDetails = GetSummaryDetails(boxNumber)
+
+    # get last packet details
+    lastPacket = LastPacketTime(boxNumber, status=True)
+
+    templateData = {
+        "mapHTML": boxNumber,
+        "currentTemperature": GetCurrentAverageTemperature(boxNumber),
+        "totalDistance": round(summaryDetails[0]),
+        "weeklyDistance": round(summaryDetails[1]),
+        "lastPacket": lastPacket[0],
+        "customer": summaryDetails[2],
+        "customerBoxNumber": summaryDetails[3],
+        "lastPacketDistance": round(summaryDetails[4], 2),
+        "latitude": lastPacket[1],
+        "longitude": lastPacket[2],
+        "sensorsOnline": summaryDetails[5],
+        "fanUptime": "",
+        "location": LatLonNamedLocation(lastPacket[1],lastPacket[2]),
+    }
+    #return jsonify(templateData)
+    return render_template("CustomerView.html", **templateData)
 
 
 @app.route("/login", methods=["GET", "POST"])

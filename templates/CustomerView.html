@@ -4,19 +4,18 @@
 
 <html>
 	{%block content %}
-
+    <title> {{customer}} Tracking || {{currentTemperature}}˚C </title>
     <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/CustomerView.css') }}">
     <link rel="stylesheet" href="/static/css/CustomerView.css">
+    <link rel="stylesheet" href="/static/css/extra.css">
 
     <div class = body >
-      <div class = grid-layout-main >
+      <div class = grid-layout-main > 
 
         <div class = card-container id = two >
           <iframe  id="customerMap" src="{{ url_for('static', filename='maps/' + mapHTML + '.html' )}}" alt="Map 002"></iframe>
         </div>
-
-
 
         <div class = card-container id = customerDataCard >
           <div class = livestock-details-container > 
@@ -53,8 +52,6 @@
           </div>
         </div>
 
-        
-
         <div class = card-container id = three >
 
           <div class= flex-container> 
@@ -63,6 +60,7 @@
 
           <div class= flex-container>
             <div class = info-data-large id = dataRangeSimple> Last 24hrs </div> 
+            <div class = info-data-large id=daterangeresult></div>
           </div>
 
           <div class= flex-container-edit >
@@ -122,14 +120,157 @@
           </div>
         </div>
 
-      </div>  
-
-      </div>
-
-    <script>
 
 
-    </script>
+        <div class = time-range-modal> 
+          <!-- The Modal -->
+          <div id="myModal" class="modal">
+          <!-- Modal content -->
+            <div class="modal-content">
+              <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+              <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+              <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+              <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+              <span class="close">&times;</span>
+      
+              <p>Choose Date Range</p>
+      
+              <form class="form-dates" name = "TimeRangeTable" method = "post" onsubmit="returnDates()">
+                  <input type="hidden" id="valueTest" name="valueTest" value="testing">
+                  <input type="hidden" id="startDate" name="startDate">
+                  <input type="hidden" id="endDate" name="endDate">
+                  <div name = "reportrange" id="reportrange" >
+                  <i class="fa fa-calendar"></i>&nbsp;
+                  <span></span> <i class="fa fa-caret-down"></i>
+                  </div>
+             
+                  <input type="submit" value="submit">
+              </form>
+      
+
+          
+      
+            </div>
+            </div> 
+      
+          </div>  
+
+
+
+
+</div>
+    </div>
+        
+<script>
+
+var dateRangeResultJS = document.getElementById("dateRangeResult")
+
+
+
+    $(function() {
+
+      var start = moment().subtract(29, 'days');
+      var end = moment();
+
+  
+
+      function cb(start, end) {
+          $('#reportrange span').html(start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm'));
+          document.getElementById('startDate').value = start.format('YYYY-MM-DD HH:mm:S');
+          document.getElementById('endDate').value = end.format('YYYY-MM-DD HH:mm:S');
+          document.getElementById('startDate').innerHTML = start.format('Y-m-d H:M:S');
+          document.getElementById('endDate').innerHTML = end.format('Y-m-d H:M:S');
+      }
+
+      $('#reportrange').daterangepicker
+      (
+          
+          {
+          startDate: start,
+          endDate: end,
+          timePicker: true,
+          ranges: {
+              'Today': [moment().startOf('day'), moment().endOf('day')], 
+              'Yesterday': [moment().startOf('day').subtract(1, 'days'), moment().endOf('day').subtract(1, 'days')],
+              'Last 7 Days': [moment().startOf('day').subtract(6, 'days'), moment().endOf('day')],
+              'Last 30 Days': [moment().startOf('day').subtract(29, 'days'), moment().endOf('day')],
+              'This Month': [moment().startOf('month'), moment().endOf('month')],
+              'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+          }
+          }, 
+          cb, 
+          {locale: {format: 'DD-MMM-YY'}}
+      );
+
+      cb(start, end);
+
+
+
+
+
+
+
+    // Get the modal
+    var modal = document.getElementById("myModal");
+    // Get the button that opens the modal
+    var btn = document.getElementById("changeData");
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+    // When the user clicks on the button, open the modal
+    btn.onclick = function() {
+      modal.style.display = "block";
+    }
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+      
+    }
+
+    returnDates() 
+    {
+      var dateToReturn = start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm');
+          console.log(dateToReturn) 
+
+          
+          alert(start + end  )
+ 
+
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    });
+
+
+ 
+
+
+
+
+</script>
+
+
+
 
 
 
