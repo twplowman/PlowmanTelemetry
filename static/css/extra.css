@@ -19,11 +19,11 @@
 
 #loader {
   z-index: 1;
-  width: 40px;
-  height: 40px;
-  border: 3px solid #3a3a3a;
+  width: 5em;
+  height: 5em;
+  border: 0.5em solid #3a3a3a;
   border-radius: 50%;
-  border-top: 3px solid #43E04B;
+  border-top: 0.5em solid #43E04B;
   animation: spin 1s cubic-bezier(0.41, 0.19, 0.65, 0.84) infinite;
 }
 
@@ -37,6 +37,40 @@
   text-align: center;
 }
 
+#loadDataModal {
+  visibility: hidden;
+  position: fixed;
+  height: 100%;
+  width: 0 auto;
+  width: 100%;
+  display: grid;
+  background: var(--colourLightGrey);
+  align-content: center;
+  justify-content: center;
+  align-items: end;
+  z-index: 1;
+  margin: 0 auto;
+  padding: 0;
+  opacity: 90%;
+  justify-items: center;
+}
+
+.typewriter {
+  overflow: hidden; /* Ensures the content is not revealed until the animation */
+  white-space: nowrap; /* Keeps the content on a single line */
+  color: var(--colourGreen);
+  margin: 0 auto; /* Gives that scrolling effect as the typing happens */
+  padding: 2em 0; 
+  letter-spacing: .15em; /* Adjust as needed */
+  animation: typing 6s steps(100,start) infinite;
+}
+
+/* The typing effect */
+@keyframes typing {
+  0% { width: 0% }
+  50% {width: 100%;}
+  100% { width: 100% }
+}
 
 #myProgress {
   width: 100%;

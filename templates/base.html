@@ -9,7 +9,6 @@
 	
 <header>
 	{% block head %}
-		<div class="right" id="loader"></div>
 		<div id="header">
 			<div class="left">
 				<!--	<div id="myProgress">
@@ -97,15 +96,11 @@
 		}
 		else
 		{
-			showPage()
+			
 		}
 	}
 	
-	function showPage() 
-	{
-		  document.getElementById("loader").style.display = "none";
-  		  mainbody.style.display = "block";
-	}
+	
 
 
 	window.addEventListener(

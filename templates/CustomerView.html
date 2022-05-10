@@ -4,11 +4,20 @@
 
 <html>
 	{%block content %}
+
+
+  <div class="modal-content" id=loadDataModal>
+    <div id="loader"></div>
+    <div class="typewriter"> Retreiving data from server, please wait . . . </div>
+    
+  </div>
+
     <title> {{customer}} Tracking || {{currentTemperature}}˚C </title>
     <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/CustomerView.css') }}">
     <link rel="stylesheet" href="/static/css/CustomerView.css">
     <link rel="stylesheet" href="/static/css/extra.css">
+    <link rel="stylesheet" href="/static/css/main.css">
 
     <div class = body >
       <div class = grid-layout-main > 
@@ -75,6 +84,10 @@
             <button class = normalButton id = changeData> 
               Change Data
             </button>
+            
+            <button class = normalButton id = autoRefresh value={{autoRefresh}} onclick="AutoRefresh()"> 
+              Live
+            </button> 
           </div>
 
         </div>
@@ -133,17 +146,19 @@
         <div class = time-range-modal> 
           <!-- The Modal -->
           <div id="myModal" class="modal">
+            
           <!-- Modal content -->
-            <div class="modal-content">
+            <div class="modal-content" id = "changeDataModal">
               <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
               <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
               <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
               <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
               <span class="close">&times;</span>
       
-              <p>Choose Date Range</p>
+              <p>Choose Date Range</p> 	
+
       
-              <form class="form-dates" name = "TimeRangeTable" method = "post" onsubmit="returnDates()">
+              <form class="form-dates" name = "TimeRangeTable" method = "post" >
                   <input type="hidden" id="valueTest" name="valueTest" value="testing">
                   <input type="hidden" id="startDate" name="startDate">
                   <input type="hidden" id="endDate" name="endDate">
@@ -152,14 +167,13 @@
                   <span></span> <i class="fa fa-caret-down"></i>
                   </div>
                   <div class= flex-container-edit>
-                  <input class = normalButton id = submitData type="submit" value="submit">
+                  <input class = normalButton id = submitData type="submit" value="submit" onsubmit="LoaderIcon()">
                   </div>
               </form>
-      
-
-          
-      
             </div>
+
+            
+
             </div> 
       
           </div>  
@@ -171,6 +185,7 @@
     </div>
         
 <script>
+
 
 var dateRangeResultJS = document.getElementById("dateRangeResult")
 
@@ -213,8 +228,46 @@ var dateRangeResultJS = document.getElementById("dateRangeResult")
 
       cb(start, end);
 
+    
 
 
+
+    var AutoRefresh = "{{AutoRefresh}}"
+    var autoRefreshButton = document.getElementById("autoRefresh")
+    if (AutoRefresh.includes("true")) 
+      {
+        autoRefreshButton.innerHTML = "Live"
+        autoRefreshButton.style.backgroundColor = "#10c469"
+        AutoRefresh = "live"
+      }
+      else
+      {
+        autoRefreshButton.innerHTML = "Go Live"
+        autoRefreshButton.style.backgroundColor = "#8c8c8c"
+        AutoRefresh = "false"
+      }
+    
+    
+ 
+    autoRefreshButton.onclick = function() 
+    {
+      console.log("test")
+      if (AutoRefresh.includes("false")) 
+      {
+        autoRefreshButton.innerHTML = "Live"
+        autoRefreshButton.style.backgroundColor = "#10c469"
+        AutoRefresh = "true"
+      }
+      else
+      {
+        autoRefreshButton.innerHTML = "Go Live"
+        autoRefreshButton.style.backgroundColor = "#8c8c8c"
+        AutoRefresh = "false"
+      }
+    }
+
+
+    
 
 
 
@@ -235,22 +288,19 @@ var dateRangeResultJS = document.getElementById("dateRangeResult")
       
     }
 
-    returnDates() 
-    {
-      var dateToReturn = start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm');
-          console.log(dateToReturn) 
-
-          
-          alert(start + end  )
- 
-
-    }
 
     // When the user clicks anywhere outside of the modal, close it
     window.onclick = function(event) {
       if (event.target == modal) {
         modal.style.display = "none";
       }
+    }
+
+    var submitDataButton = document.getElementById("submitData");
+    submitDataButton.onclick = function() 
+    {
+      modal.style.display = "none";
+      document.getElementById("loadDataModal").style.visibility = "visible";
     }
 
 

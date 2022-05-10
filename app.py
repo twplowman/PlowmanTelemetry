@@ -155,10 +155,10 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
-    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+    systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
     #systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
-    #os.system(systemStatement)
-    shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
+    os.system(systemStatement)
+    #shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
 
 
 # Creates a Temperature graph based upon dateTime and boxNumber from SQL database
@@ -480,10 +480,12 @@ def boxRoute(name):
         dateTime = dateTimeOneDay
         session["dateTimeOneDay"] = request.form.get('startDate')
         session["dateTimeNow"] = request.form.get('endDate')
+        autoRefresh = session.get("autoRefresh")
         #return jsonify(request.form)
     if request.method == "GET":
         dateTimeOneDay = session.get("dateTimeOneDay")
         dateTimeNow = session.get("dateTimeNow")
+        autoRefresh = session.get("autoRefresh")
         
 
     # defining table to query - We always query the same table now.
@@ -497,7 +499,7 @@ def boxRoute(name):
     # sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
     filename = boxNumber+".html"
     RenderMap(dateTimeNow,dateTimeOneDay,boxNumber,filename)
-    sqlGenerateTempGraph(dateTimeNow, dateTimeOneDay, boxNumber + ".png")
+    #sqlGenerateTempGraph(dateTimeNow, dateTimeOneDay, boxNumber + ".png")
 
     # get general details
     summaryDetails = GetSummaryDetails(boxNumber)
@@ -524,7 +526,8 @@ def boxRoute(name):
         "StartTimeHr":ConvertToDateTime(dateTimeOneDay).strftime("%-I%p"),
         "EndTime" : ConvertToDateTime(dateTimeNow).strftime("%-d %b %y"),
         "EndTimeWD" : ConvertToDateTime(dateTimeNow).strftime("%a"),
-        "EndTimeHr":ConvertToDateTime(dateTimeNow).strftime("%-I%p")
+        "EndTimeHr":ConvertToDateTime(dateTimeNow).strftime("%-I%p"),
+        "AutoRefresh": autoRefresh
     }
     #return jsonify(templateData)
     return render_template("CustomerView.html", **templateData)
@@ -545,6 +548,7 @@ def login():
         dateTimeNow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         session["dateTimeOneDay"] = dateTimeOneDay
         session["dateTimeNow"] = dateTimeNow
+        session["autoRefresh"] = "true"
         return redirect(url_for("boxRoute", name=username))
     if "username" in session:
         session.pop("username", None)
