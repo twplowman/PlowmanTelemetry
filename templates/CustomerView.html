@@ -56,19 +56,27 @@
 
           <div class= flex-container> 
             <div class = info-title> Showing data from:  </div> 
+          
           </div>
+
+          <div class = info-title id=daterangeresult>  {{StartTimeWD}} - {{EndTimeWD}}</div>
+         
 
           <div class= flex-container>
-            <div class = info-data-large id = dataRangeSimple> Last 24hrs </div> 
-            <div class = info-data-large id=daterangeresult></div>
+            <div class = info-data-large id = dataRangeSimple> {{StartTime}} - {{EndTime}} </div> 
           </div>
 
+          <div class = info-title id=daterangeresult> {{StartTimeHr}} - {{EndTimeHr}}</div>
+
           <div class= flex-container-edit >
+             <div class = info-data-accent> [All Times Displayed in UCT] </div> 
+            
             <div class = info-data-accent id = dataRange>  </div> 
             <button class = normalButton id = changeData> 
               Change Data
             </button>
           </div>
+
         </div>
 
         <div class = card-container id = six >
@@ -143,8 +151,9 @@
                   <i class="fa fa-calendar"></i>&nbsp;
                   <span></span> <i class="fa fa-caret-down"></i>
                   </div>
-             
-                  <input type="submit" value="submit">
+                  <div class= flex-container-edit>
+                  <input class = normalButton id = submitData type="submit" value="submit">
+                  </div>
               </form>
       
 
@@ -166,7 +175,6 @@
 var dateRangeResultJS = document.getElementById("dateRangeResult")
 
 
-
     $(function() {
 
       var start = moment().subtract(29, 'days');
@@ -180,6 +188,7 @@ var dateRangeResultJS = document.getElementById("dateRangeResult")
           document.getElementById('endDate').value = end.format('YYYY-MM-DD HH:mm:S');
           document.getElementById('startDate').innerHTML = start.format('Y-m-d H:M:S');
           document.getElementById('endDate').innerHTML = end.format('Y-m-d H:M:S');
+          
       }
 
       $('#reportrange').daterangepicker

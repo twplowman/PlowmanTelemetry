@@ -155,9 +155,8 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
-    systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
     #systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
-    #print(systemStatement)
     #os.system(systemStatement)
     shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
 
@@ -479,11 +478,12 @@ def boxRoute(name):
         dateTimeOneDay = request.form.get('startDate')
         dateTimeNow = request.form.get('endDate')
         dateTime = dateTimeOneDay
+        session["dateTimeOneDay"] = request.form.get('startDate')
+        session["dateTimeNow"] = request.form.get('endDate')
         #return jsonify(request.form)
     if request.method == "GET":
-        dateTimeOneDay = datetime.utcnow() - timedelta(days=1)
-        dateTime = dateTimeOneDay.strftime("%Y-%m-%d %H:%M:%S")
-        dateTimeNow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        dateTimeOneDay = session.get("dateTimeOneDay")
+        dateTimeNow = session.get("dateTimeNow")
         
 
     # defining table to query - We always query the same table now.
@@ -497,7 +497,7 @@ def boxRoute(name):
     # sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
     filename = boxNumber+".html"
     RenderMap(dateTimeNow,dateTimeOneDay,boxNumber,filename)
-    sqlGenerateTempGraph(dateTimeNow, dateTime, boxNumber + ".png")
+    sqlGenerateTempGraph(dateTimeNow, dateTimeOneDay, boxNumber + ".png")
 
     # get general details
     summaryDetails = GetSummaryDetails(boxNumber)
@@ -519,6 +519,12 @@ def boxRoute(name):
         "sensorsOnline": summaryDetails[5],
         "fanUptime": "",
         "location": LatLonNamedLocation(lastPacket[1],lastPacket[2]),
+        "StartTime" : ConvertToDateTime(dateTimeOneDay).strftime("%-d %b %y"),
+        "StartTimeWD" : ConvertToDateTime(dateTimeOneDay).strftime("%a"),
+        "StartTimeHr":ConvertToDateTime(dateTimeOneDay).strftime("%-I%p"),
+        "EndTime" : ConvertToDateTime(dateTimeNow).strftime("%-d %b %y"),
+        "EndTimeWD" : ConvertToDateTime(dateTimeNow).strftime("%a"),
+        "EndTimeHr":ConvertToDateTime(dateTimeNow).strftime("%-I%p")
     }
     #return jsonify(templateData)
     return render_template("CustomerView.html", **templateData)
@@ -533,6 +539,12 @@ def login():
         if CheckUsernameInDatabase(username) is None:
             return redirect(url_for("AccessDenied"))
 
+# required format 'YYYY-MM-DD HH:mm:S'
+        dateTimeOneDay = datetime.utcnow() - timedelta(days=1)
+        dateTimeOneDay = dateTimeOneDay.strftime("%Y-%m-%d %H:%M:%S")
+        dateTimeNow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        session["dateTimeOneDay"] = dateTimeOneDay
+        session["dateTimeNow"] = dateTimeNow
         return redirect(url_for("boxRoute", name=username))
     if "username" in session:
         session.pop("username", None)
