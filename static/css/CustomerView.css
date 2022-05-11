@@ -95,8 +95,15 @@
     background-color: var(--colourGrey);
   }
 
-  #changeData:hover, #submitData:hover, #reportrange:hover, #autoRefresh:hover {
+  #changeData:hover, #submitData:hover, #autoRefresh:hover {
     transform: scale(1.2);
+    opacity: 50%;
+    cursor:pointer;
+  }
+
+  #reportrange:hover
+  {
+    opacity: 50%;
     cursor:pointer;
   }
 

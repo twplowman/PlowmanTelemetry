@@ -84,10 +84,13 @@
             <button class = normalButton id = changeData> 
               Change Data
             </button>
+            <div class="tooltip">
+              <span class="tooltiptext">Automatically refreshes the page</span>
+              <button class = normalButton id = autoRefresh value="true" onclick="AutoRefresh()"> 
+                Go Live
+              </button> 
+            </div>
             
-            <button class = normalButton id = autoRefresh value={{autoRefresh}} onclick="AutoRefresh()"> 
-              Live
-            </button> 
           </div>
 
         </div>
@@ -186,90 +189,48 @@
         
 <script>
 
-
-var dateRangeResultJS = document.getElementById("dateRangeResult")
-
-
-    $(function() {
-
-      var start = moment().subtract(29, 'days');
-      var end = moment();
-
-  
-
-      function cb(start, end) {
-          $('#reportrange span').html(start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm'));
-          document.getElementById('startDate').value = start.format('YYYY-MM-DD HH:mm:S');
-          document.getElementById('endDate').value = end.format('YYYY-MM-DD HH:mm:S');
-          document.getElementById('startDate').innerHTML = start.format('Y-m-d H:M:S');
-          document.getElementById('endDate').innerHTML = end.format('Y-m-d H:M:S');
-          
-      }
-
-      $('#reportrange').daterangepicker
-      (
-          
-          {
-          startDate: start,
-          endDate: end,
-          timePicker: true,
-          ranges: {
-              'Today': [moment().startOf('day'), moment().endOf('day')], 
-              'Yesterday': [moment().startOf('day').subtract(1, 'days'), moment().endOf('day').subtract(1, 'days')],
-              'Last 7 Days': [moment().startOf('day').subtract(6, 'days'), moment().endOf('day')],
-              'Last 30 Days': [moment().startOf('day').subtract(29, 'days'), moment().endOf('day')],
-              'This Month': [moment().startOf('month'), moment().endOf('month')],
-              'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-          }
-          }, 
-          cb, 
-          {locale: {format: 'DD-MMM-YY'}}
-      );
-
-      cb(start, end);
-
-    
+//On Load, do this: 
 
 
+// Date Range Picker function.
+$(function() {
 
-    var AutoRefresh = "{{AutoRefresh}}"
-    var autoRefreshButton = document.getElementById("autoRefresh")
-    if (AutoRefresh.includes("true")) 
-      {
-        autoRefreshButton.innerHTML = "Live"
-        autoRefreshButton.style.backgroundColor = "#10c469"
-        AutoRefresh = "live"
-      }
-      else
-      {
-        autoRefreshButton.innerHTML = "Go Live"
-        autoRefreshButton.style.backgroundColor = "#8c8c8c"
-        AutoRefresh = "false"
-      }
-    
-    
- 
-    autoRefreshButton.onclick = function() 
+var start = moment().subtract(29, 'days');
+var end = moment();
+
+function cb(start, end) {
+    $('#reportrange span').html(start.format('MMMM D, YYYY - HH:mm') + ' - ' + end.format('MMMM D, YYYY - HH:mm'));
+    document.getElementById('startDate').value = start.format('YYYY-MM-DD HH:mm:S');
+    document.getElementById('endDate').value = end.format('YYYY-MM-DD HH:mm:S');
+    document.getElementById('startDate').innerHTML = start.format('Y-m-d H:M:S');
+    document.getElementById('endDate').innerHTML = end.format('Y-m-d H:M:S');
+}
+
+$('#reportrange').daterangepicker
+(
     {
-      console.log("test")
-      if (AutoRefresh.includes("false")) 
-      {
-        autoRefreshButton.innerHTML = "Live"
-        autoRefreshButton.style.backgroundColor = "#10c469"
-        AutoRefresh = "true"
-      }
-      else
-      {
-        autoRefreshButton.innerHTML = "Go Live"
-        autoRefreshButton.style.backgroundColor = "#8c8c8c"
-        AutoRefresh = "false"
-      }
+    startDate: start,
+    endDate: end,
+    timePicker: true,
+    ranges: {
+        'Today': [moment().startOf('day'), moment().endOf('day')], 
+        'Yesterday': [moment().startOf('day').subtract(1, 'days'), moment().endOf('day').subtract(1, 'days')],
+        'Last 7 Days': [moment().startOf('day').subtract(6, 'days'), moment().endOf('day')],
+        'Last 30 Days': [moment().startOf('day').subtract(29, 'days'), moment().endOf('day')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
     }
-
+    }, 
+    cb, 
+    {locale: {format: 'DD-MMM-YY'}}
+);
+cb(start, end);
 
     
 
 
+
+    
 
 
     // Get the modal
@@ -296,27 +257,14 @@ var dateRangeResultJS = document.getElementById("dateRangeResult")
       }
     }
 
+    // When data is submitted, hide the submit Modal and show the loader.
     var submitDataButton = document.getElementById("submitData");
     submitDataButton.onclick = function() 
     {
+      localStorage.setItem("refreshValue", "false"); // We don't want to autorefresh the page now. 
       modal.style.display = "none";
       document.getElementById("loadDataModal").style.visibility = "visible";
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     });
 
