@@ -155,10 +155,10 @@ def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
     folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
     folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
     my_map.save(filename)
-    systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
     #systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
-    os.system(systemStatement)
-    #shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
+    #os.system(systemStatement)
+    shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
 
 
 # Creates a Temperature graph based upon dateTime and boxNumber from SQL database
