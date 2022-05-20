@@ -1,12 +1,9 @@
-from turtle import pos
-from unicodedata import name
 import matplotlib.pyplot as plt
 import matplotlib
 import folium
 import branca.colormap as cm
 from geopy import Nominatim
 import mysql.connector
-from numpy import tile
 import sqlconnect as sql
 import os
 import shutil
