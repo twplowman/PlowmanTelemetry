@@ -190,7 +190,11 @@
 <script>
 
 //On Load, do this: 
+var dateTimeStartVal = moment().startOf('month')
+var dateTimeEndVal = moment().endOf('day')
 
+dateTimeEndVal.format('YYYY-MM-DD HH:mm:S')
+dateTimeStartVal.format('YYYY-MM-DD HH:mm:S')
 
 // Date Range Picker function.
 $(function() {
@@ -269,7 +273,73 @@ cb(start, end);
     });
 
 
- 
+//AutoRefresh
+var autoRefreshButton = document.getElementById("autoRefresh")
+autoRefreshButton.value = localStorage.getItem("refreshValue");
+var myTimeout
+
+if (autoRefreshButton.value == "true") {
+			autoRefreshButton.innerHTML = "Live";
+			autoRefreshButton.value = "true";
+			autoRefreshButton.style.backgroundColor = "#10c469";
+			
+
+
+      myTimeout = setTimeout(function(){ window.location.reload(); }, 5000);
+
+		}
+		else {
+			autoRefreshButton.innerHTML = "Go Live";
+			autoRefreshButton.style.backgroundColor = "#8c8c8c";
+			autoRefreshButton.value = "false";
+			
+		}
+		
+
+		autoRefreshButton.onclick = function () {
+			if (autoRefreshButton.value == "false") {
+				autoRefreshButton.innerHTML = "Live";
+				autoRefreshButton.style.backgroundColor = "#10c469";
+				autoRefreshButton.value = "live";
+
+                var postData = 
+        { 
+        Username:"{{customerBoxNumber}}",
+        updateType:"Ajax",
+        dateTimeStart: dateTimeStartVal,
+        dateTimeEnd: dateTimeStartVal,
+        }
+
+
+        $.ajax({
+              type: "POST",
+              data: JSON.stringify(postData),
+              success: console.log('Data has been posted'),             
+              contentType: "application/json; charset=utf-8",
+              dataType:"json",
+        });
+
+    
+
+        console.log(postData)
+        
+
+
+				myTimeout = setTimeout(function(){ window.location.reload(); }, 5000);
+				localStorage.setItem("refreshValue", "true");
+
+			}
+			else {
+				autoRefreshButton.innerHTML = "Go Live";
+				autoRefreshButton.style.backgroundColor = "#8c8c8c";
+				autoRefreshButton.value = "false";
+				clearTimeout(myTimeout);
+				localStorage.setItem("refreshValue", "false");
+
+
+			}
+		} 
+
 
 
 

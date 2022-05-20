@@ -1,268 +1,12 @@
-import os
-import shutil
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 import mysql.connector
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import matplotlib
-import folium
-import branca.colormap as cm
-from geopy import Nominatim
+import sqlconnect as sql
+import maps as maps
 
-matplotlib.use("Agg")
 
 app = Flask(__name__)
 app.secret_key = "A0Zr98j/3yX R~XHH!jmN]LWX/,?RT"
-
-
-def MysqlConfig():
-    mysqlconfig = {
-        "host": "plowmantelemetrydb.clsmeutacd1v.eu-west-2.rds.amazonaws.com",
-        "user": "admin",
-        "password": "bR0m3lIad2021!!",
-        "database": "plowmantelemetryschema",
-    }
-    return mysqlconfig
-
-
-def sqlGetLogin(username):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()
-    query = "SELECT * FROM plowmantelemetryschema.PBL_Telemetry_UserAccess;"
-    cursor.execute(
-        query,
-    )
-    for x in cursor:
-        return "".join(x)
-
-
-def CheckUsernameInDatabase(username):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()
-    query = "SELECT * FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE UserID = %s;"
-    cursor.execute(query, (username,))
-    for x in cursor:
-        return "".join(x)
-
-
-def GetTableByID(name):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()
-    query = "SELECT PrimaryTable FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE UserID = %s;"  # AND `Box Number` = %s;") #construct query
-    val = cursor.execute(query, (name,))
-    for x in cursor:
-        return "".join(x)
-
-
-def InsertSQL(value, table):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    mycursor = mydb.cursor()
-    # sql = "INSERT INTO `plowmantelemetryschema`.`PBL_Telemetry` (`Box Number`, `DateTime`, `Longitude`, `Latitude`, `Temperature 1`) VALUES ('\'PBL v0.4.2', '2021-10-06 08:03:29', '54.08095', '-1.1727', '13')"
-    sql = (
-        "INSERT INTO plowmantelemetryschema."
-        + table
-        + " (`Box Number`, `DateTime`, `Latitude`, `Longitude`, `T1`,`T2`,`T3`,`T4`,`T5`,`T6`,`T7`,`T8`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-    )
-    examples = ("PBL v0.4.1", "2021-10-06 08:03:29", "54.08095", "-1.1727", "-127.000")
-    print(value)
-    value = value.lstrip('"')
-    value = value.rstrip('"')
-    value = eval(value)
-    print(value)
-    mycursor.execute(sql, value)
-    mydb.commit()
-
-
-def SelectSQL(table):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    mycursor = mydb.cursor()
-    mycursor.execute(
-        "SELECT * FROM `plowmantelemetryschema`." + table + " ORDER BY ID DESC;"
-    )
-    myresult = mycursor.fetchall()
-
-    data = []
-    for x in myresult:
-        data.append(x)
-        data.append("\\n\\n")
-    return data
-
-
-# Creates a Map based upon dateTime and boxNumber from SQL database
-# Uses SQL database: plowmantelemetryschema.PBL_Telemetry_2
-# Finds latitude and longitude in range and plots these on a map
-# TODO - add a few days before? or all day ranges.
-# Saves file to same place this code executes then file is moved to correct folder
-#
-# dateTime = datetime in format of YYYY-MM-DD HH/MM/SS
-# boxNumber = string that is specific to livestock box. e.g. 'PBL v0.4.9' no checks if this is wrong!
-def PlotLivestockRoute(boxNumber, dateTime, TimeStart):
-
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()  # define cursor
-    query = (
-        ("SELECT latitude, longitude, T3 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s AND `Box Number` = %s ORDER BY DateTime;")
-    )  # AND `Box Number` = %s;") #construct query
-    cursor.execute(
-        query,
-        (
-            TimeStart,
-            dateTime,
-            boxNumber
-        ),
-    )  # execute query using time range and box number
-    print(dateTime, TimeStart)
-    latitudeRange = []
-    longitudeRange = []
-    locationData = []
-    TempRange = []
-    for (
-        latitude,
-        longitude,
-        tempIndex
-    ) in cursor:  # loop through each row and store longitude and latitude under cursor
-        latitudeRange.append(latitude)
-        longitudeRange.append(longitude)
-        locationData.append([latitude,longitude])
-        TempRange.append(tempIndex)
-    if not latitudeRange:
-        return
-
-    currentLocation = [latitude,longitude]
-
-    return currentLocation, locationData, TempRange
-
-
-def RenderMap(dateTimeNow,dateTimeStart,boxNumber,filename):
-
-    currentLocation, dataRange, TempRange = PlotLivestockRoute(boxNumber,dateTimeNow,dateTimeStart)
-    my_map = folium.Map(currentLocation, zoom_start=12)
-    folium.PolyLine(dataRange, color="#0e4a99", weight=6, opacity=1).add_to(my_map)
-    colormap = cm.LinearColormap(
-                                (   "#ffff00",
-                                    "#00ff00",
-                                    "#00ffff",
-                                    "#0000ff",
-                                    "#ff00ff",
-                                    "#ff0000"   )
-                                ,index=None,vmin=0,vmax=20)
-    folium.ColorLine(positions=dataRange, colors=TempRange,colormap=colormap,nb_steps=80,weight=4,opacity=0.9).add_to(my_map)
-    folium.CircleMarker(currentLocation,radius=12,fill=True,opacity=1,popup="hello",color="green").add_to(my_map)
-    my_map.save(filename)
-    #systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
-    #systemStatement = "sudo cp "+ filename+" ~/PlowmanTelemetry/static/maps"  #Server
-    #os.system(systemStatement)
-    shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
-
-
-# Creates a Temperature graph based upon dateTime and boxNumber from SQL database
-# Uses SQL database: plowmantelemetryschema.PBL_Telemetry_2
-# Finds temperature and ID in range and plots these on a graph
-# TODO - add a few days before? or all day ranges.
-# Saves file to same place this code executes then file is moved to correct folder
-#
-# dateTime = datetime in format of YYYY-MM-DD HH/MM/SS
-# boxNumber = string that is specific to livestock box. e.g. 'PBL v0.4.9' no checks if this is wrong!
-# filename = name to save temperature (usually same as box number)
-def sqlGenerateTempGraph(dateTime, timeRange, filename):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    TemperatureID = "T1"
-    cursor = mydb.cursor()  # define cursor
-    query = "SELECT DateTime,T1,T2,T3,T4,T5,T6,T7,T8 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s;"  # AND `Box Number` = %s;") #construct query
-    cursor.execute(
-        query,
-        (
-            timeRange,
-            dateTime,
-        ),
-    )  # execute query using time range and box number
-    # define array
-    ID = []
-    T1 = []
-    T2 = []
-    T3 = []
-    T4 = []
-    T5 = []
-    T6 = []
-    T7 = []
-    T8 = []
-
-    for (
-        Identifier,
-        Temp1,
-        Temp2,
-        Temp3,
-        Temp4,
-        Temp5,
-        Temp6,
-        Temp7,
-        Temp8,
-    ) in cursor:  # loop through each row and store longitude and latitude under cursor
-        if Temp1 != -127 and Temp1 != 85:
-            T1.append(Temp1)
-        else:
-            T1.append(float("NaN"))
-        if Temp2 != -127 and Temp2 != 85:
-            T2.append(Temp2)
-        else:
-            T2.append(float("NaN"))
-        if Temp3 != -127 and Temp3 != 85:
-            T3.append(Temp3)
-        else:
-            T3.append(float("NaN"))
-        if Temp4 != -127 and Temp4 != 85:
-            T4.append(Temp4)
-        else:
-            T4.append(float("NaN"))
-        if Temp5 != -127 and Temp5 != 85:
-            T5.append(Temp5)
-        else:
-            T5.append(float("NaN"))
-        if Temp6 != -127 and Temp6 != 85:
-            T6.append(Temp6)
-        else:
-            T6.append(float("NaN"))
-        if Temp7 != -127 and Temp7 != 85:
-            T7.append(Temp7)
-        else:
-            T7.append(float("NaN"))
-        if Temp8 != -127 and Temp8 != 85:
-            T8.append(Temp8)
-        else:
-            T8.append(float("NaN"))
-        ID.append(Identifier)
-    if not T1:
-        return
-
-    plt.plot(
-        ID, T1, ID, T2, ID, T3, ID, T4, ID, T5, ID, T6, ID, T7, ID, T8
-    )  # plot graph - wants to be in own function.
-    plt.xticks(rotation=45)
-    plt.grid()
-    plt.title("Livestock Internal Temperature")
-    plt.xlabel("Time || days/hrs")
-    plt.ylabel("Temperature ˚C")
-    plt.savefig(filename, bbox_inches="tight")
-    os.system(
-        "mv " + filename + " ~/flaskapp/static/maps/"
-    )  # move to correct folder so server can find the file
-    plt.clf()
-
-
-def LatLonNamedLocation(latitude,longitude):
-    geolocator = Nominatim(user_agent="geoapiExercises")
-    coords = str(latitude) + "," + str(longitude)
-    location = geolocator.reverse(coords, exactly_one=True)
-    name = location.raw["display_name"]
-    return name
-
 
 # Queries SQL database and finds last row for specified box number. Converts to date or checks if online/offline
 # boxNumber = string that is specific to livestock box. e.g. 'PBL v0.4.9' no checks if this is wrong!
@@ -271,7 +15,7 @@ def LatLonNamedLocation(latitude,longitude):
 #          - status.     if set as true, will return last packet in readable format AND ONLINE/OFFLINE (used on html)
 # returns datetime in format of '%Y-%m-%d %H:%M:%S' as standard.
 def LastPacketTime(boxNumber, **kwargs):
-    config = MysqlConfig()
+    config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()  # define cursor
     query = "SELECT DateTime, Latitude, Longitude FROM PBL_Uploaded_Data WHERE  `Box Number` = %s ORDER BY DateTime DESC LIMIT 1  ;"  # construct query
@@ -325,7 +69,7 @@ def ConvertToReadableTime(dateTime):
 
 
 def GetSummaryDetails(boxNumber):
-    config = MysqlConfig()
+    config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()  # define cursor
     query = "SELECT TotalDistance, WeeklyDistance, Customer, CustomerBoxNumber, LastPacketDistance, SensorsOnline FROM PBL_Telemetry_Summary WHERE PBL_Telemetry_Summary.BoxNumber = %s;"
@@ -350,7 +94,7 @@ def GetSummaryDetails(boxNumber):
     return result
 
 def GetAllBoxNumbers():
-    config = MysqlConfig()
+    config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()
     query = "SELECT BoxNumber FROM PBL_Telemetry_Summary;"
@@ -365,7 +109,7 @@ def GetAllBoxNumbers():
 # Last Packet
 # Temperature
 def GetCurrentAverageTemperature(boxNumber):
-    config = MysqlConfig()
+    config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()  # define cursor
     query = "SELECT T1,T2,T3,T4,T5,T6,T7,T8 FROM PBL_Uploaded_Data WHERE  `Box Number` = %s ORDER BY DateTime DESC LIMIT 1  ;"  # construct query
@@ -381,6 +125,14 @@ def GetCurrentAverageTemperature(boxNumber):
             i = i + 1
         data = round(data / counter, 1)
     return data
+
+
+def CheckUsernameInSession(name):
+    if "username" not in session:
+            return redirect(url_for("login"))
+
+    if session.get("username") != name:
+        return redirect(url_for("AccessDenied"))
 
 
 @app.route("/")
@@ -401,11 +153,11 @@ def sqlTPlowman():
         # print('data:',input_json)
         value = input_json["value"]
 
-        InsertSQL(value, table)
+        sql.InsertSQL(value, table)
         # Save to sql
         return value
     if request.method == "GET":
-        values = SelectSQL(table)
+        values = sql.SelectSQL(table)
         return jsonify(values)
 
 
@@ -418,17 +170,17 @@ def sqlRedpath():
         # print('data:',input_json)
         value = input_json["value"]
 
-        InsertSQL(value, table)
+        sql.InsertSQL(value, table)
         # Save to sql
         return value
     if request.method == "GET":
-        values = SelectSQL(table)
+        values = sql.SelectSQL(table)
         return jsonify(values)
 
 
 @app.route("/mysql/<username>")
 def sqlLogin(username):
-    username = sqlGetLogin(username)
+    username = sql.sqlGetLogin(username)
     return jsonify(username)
 
 
@@ -459,32 +211,51 @@ def summary():
         if lastPacket is None:
             lastPacket = [0,0,0]
         print(lastPacket)
-        summaryDetails.append([GetSummaryDetails(BoxNumber),GetCurrentAverageTemperature(BoxNumber),LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
+        summaryDetails.append([GetSummaryDetails(BoxNumber),GetCurrentAverageTemperature(BoxNumber),maps.LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
         print (summaryDetails)
     print (summaryDetails)
     
     return jsonify(summaryDetails)
 
 
+@app.route("/updateSessionData", methods = ["POST"])
+def UpdateSessionData():
+    CheckUsernameInSession()
+
+    
+
 @app.route("/box/<string:name>", methods=["GET", "POST"])
 def boxRoute(name):
-    if "username" not in session:
-            return redirect(url_for("login"))
-
-    if session.get("username") != name:
-        return redirect(url_for("AccessDenied"))
+    CheckUsernameInSession(name)
 
     if request.method == "POST":
-        dateTimeOneDay = request.form.get('startDate')
-        dateTimeNow = request.form.get('endDate')
-        dateTime = dateTimeOneDay
-        session["dateTimeOneDay"] = request.form.get('startDate')
-        session["dateTimeNow"] = request.form.get('endDate')
+
+        # Form Data from Datepicker
+        dateTimeStart = request.form.get('startDate')
+        dateTimeEnd = request.form.get('endDate')
+        session["dateTimeStart"] = request.form.get('startDate')
+        session["dateTimeEnd"] = request.form.get('endDate')
         autoRefresh = session.get("autoRefresh")
-        #return jsonify(request.form)
+        if dateTimeStart is None:
+            #Ajax updating session values. 
+            updateType = request.form.get("updateType")
+            data = (request.get_json())
+            print(type(data))
+            data = (request.get_json(force=True))
+            updateType = data['updateType']
+
+        
+            if updateType == "Ajax":
+                dateTimeStart = (datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                dateTimeEnd = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                session["dateTimeStart"] = dateTimeStart
+                session["dateTimeEnd"] = dateTimeEnd
+                session["autoRefresh"] = request.form.get('endDate')
+                
+            #return jsonify(request.form)
     if request.method == "GET":
-        dateTimeOneDay = session.get("dateTimeOneDay")
-        dateTimeNow = session.get("dateTimeNow")
+        dateTimeStart = session.get("dateTimeStart")
+        dateTimeEnd = session.get("dateTimeEnd")
         autoRefresh = session.get("autoRefresh")
         
 
@@ -496,10 +267,10 @@ def boxRoute(name):
     
 
     # calculating graphs
-    # sqlOneDayMap(table,dateTimeNow,dateTime,boxNumber+".html")
+    # sqlOneDayMap(table,dateTimeEnd,dateTime,boxNumber+".html")
     filename = boxNumber+".html"
-    RenderMap(dateTimeNow,dateTimeOneDay,boxNumber,filename)
-    #sqlGenerateTempGraph(dateTimeNow, dateTimeOneDay, boxNumber + ".png")
+    maps.RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename)
+    #sqlGenerateTempGraph(dateTimeEnd, dateTimeStart, boxNumber + ".png")
 
     # get general details
     summaryDetails = GetSummaryDetails(boxNumber)
@@ -520,16 +291,15 @@ def boxRoute(name):
         "longitude": lastPacket[2],
         "sensorsOnline": summaryDetails[5],
         "fanUptime": "",
-        "location": LatLonNamedLocation(lastPacket[1],lastPacket[2]),
-        "StartTime" : ConvertToDateTime(dateTimeOneDay).strftime("%-d %b %y"),
-        "StartTimeWD" : ConvertToDateTime(dateTimeOneDay).strftime("%a"),
-        "StartTimeHr":ConvertToDateTime(dateTimeOneDay).strftime("%-I%p"),
-        "EndTime" : ConvertToDateTime(dateTimeNow).strftime("%-d %b %y"),
-        "EndTimeWD" : ConvertToDateTime(dateTimeNow).strftime("%a"),
-        "EndTimeHr":ConvertToDateTime(dateTimeNow).strftime("%-I%p"),
+        "location": maps.LatLonNamedLocation(lastPacket[1],lastPacket[2]),
+        "StartTime" : ConvertToDateTime(dateTimeStart).strftime("%-d %b %y"),
+        "StartTimeWD" : ConvertToDateTime(dateTimeStart).strftime("%a"),
+        "StartTimeHr":ConvertToDateTime(dateTimeStart).strftime("%-I%p"),
+        "EndTime" : ConvertToDateTime(dateTimeEnd).strftime("%-d %b %y"),
+        "EndTimeWD" : ConvertToDateTime(dateTimeEnd).strftime("%a"),
+        "EndTimeHr":ConvertToDateTime(dateTimeEnd).strftime("%-I%p"),
         "AutoRefresh": autoRefresh
     }
-    #return jsonify(templateData)
     return render_template("CustomerView.html", **templateData)
 
 
@@ -539,15 +309,14 @@ def login():
         session["username"] = request.form["username"]
         username = session.get("username")
 
-        if CheckUsernameInDatabase(username) is None:
+        if sql.CheckUsernameInDatabase(username) is None:
             return redirect(url_for("AccessDenied"))
 
 # required format 'YYYY-MM-DD HH:mm:S'
-        dateTimeOneDay = datetime.utcnow() - timedelta(days=1)
-        dateTimeOneDay = dateTimeOneDay.strftime("%Y-%m-%d %H:%M:%S")
-        dateTimeNow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        session["dateTimeOneDay"] = dateTimeOneDay
-        session["dateTimeNow"] = dateTimeNow
+        dateTimeStart = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+        dateTimeEnd = datetime.utcnow().replace(hour=23, minute=59, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+        session["dateTimeStart"] = dateTimeStart
+        session["dateTimeEnd"] = dateTimeEnd
         session["autoRefresh"] = "true"
         return redirect(url_for("boxRoute", name=username))
     if "username" in session:

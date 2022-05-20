@@ -60,9 +60,6 @@
 
 	var myVar;
 	var delay = "{{delay}}"
-	var autoRefreshButton = document.getElementById("autoRefresh")
-	autoRefreshButton.value = localStorage.getItem("refreshValue");
-	var myTimeout
 
 	function myFunction() {
 		var lastPacket = String("{{lastPacket}}");
@@ -91,49 +88,7 @@
 			}
 		}
 
-		//AutoRefresh
-
-		
-		if (autoRefreshButton.value == "true") {
-			autoRefreshButton.innerHTML = "Live";
-			autoRefreshButton.value = "true";
-			autoRefreshButton.style.backgroundColor = "#10c469";
-			myTimeout = setTimeout(function(){ window.location.reload(); }, 120000);
-			
-
-
-		}
-		else {
-			autoRefreshButton.innerHTML = "Go Live";
-			autoRefreshButton.style.backgroundColor = "#8c8c8c";
-			autoRefreshButton.value = "false";
-			
-		}
-
-
-		}
-
-
-		
-		autoRefreshButton.onclick = function () {
-			if (autoRefreshButton.value == "false") {
-				autoRefreshButton.innerHTML = "Live";
-				autoRefreshButton.style.backgroundColor = "#10c469";
-				autoRefreshButton.value = "live";
-				myTimeout = setTimeout(function(){ window.location.reload(); }, 120000);
-				localStorage.setItem("refreshValue", "true");
-
-			}
-			else {
-				autoRefreshButton.innerHTML = "Go Live";
-				autoRefreshButton.style.backgroundColor = "#8c8c8c";
-				autoRefreshButton.value = "false";
-				clearTimeout(myTimeout);
-				localStorage.setItem("refreshValue", "false");
-
-
-			}
-		}
+	}
 
 
 
