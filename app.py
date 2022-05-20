@@ -244,13 +244,13 @@ def boxRoute(name):
             data = (request.get_json(force=True))
             updateType = data['updateType']
 
-        
+            #something is wrong here
             if updateType == "Ajax":
-                dateTimeStart = (datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-                dateTimeEnd = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                dateTimeStart = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                dateTimeEnd = datetime.utcnow().replace(hour=23, minute=59, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
                 session["dateTimeStart"] = dateTimeStart
                 session["dateTimeEnd"] = dateTimeEnd
-                session["autoRefresh"] = request.form.get('endDate')
+                session["autoRefresh"] = request.form.get('autoRefresh') #think this is done client side at the moment
                 
             #return jsonify(request.form)
     if request.method == "GET":

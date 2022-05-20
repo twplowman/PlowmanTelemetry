@@ -190,7 +190,7 @@
 <script>
 
 //On Load, do this: 
-var dateTimeStartVal = moment().startOf('month')
+var dateTimeStartVal = moment().startOf('day')
 var dateTimeEndVal = moment().endOf('day')
 
 dateTimeEndVal.format('YYYY-MM-DD HH:mm:S')
@@ -285,7 +285,7 @@ if (autoRefreshButton.value == "true") {
 			
 
 
-      myTimeout = setTimeout(function(){ window.location.reload(); }, 5000);
+      myTimeout = setTimeout(function(){ window.location.reload(); }, 120000);
 
 		}
 		else {
@@ -325,7 +325,7 @@ if (autoRefreshButton.value == "true") {
         
 
 
-				myTimeout = setTimeout(function(){ window.location.reload(); }, 5000);
+				myTimeout = setTimeout(function(){ window.location.reload(); }, 120000);
 				localStorage.setItem("refreshValue", "true");
 
 			}
