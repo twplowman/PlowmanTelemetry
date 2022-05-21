@@ -4,9 +4,13 @@ import folium
 import branca.colormap as cm
 from geopy import Nominatim
 import mysql.connector
+from pyparsing import col
 import sqlconnect as sql
 import os
 import shutil
+import plotly.express as px 
+import matplotlib.dates as mdates
+
 global developer
 developer = False
 
@@ -66,7 +70,7 @@ def RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename):
     currentLocation, dataRange, TempRange = PlotLivestockRoute(boxNumber,dateTimeEnd,dateTimeStart)
     
     my_map = folium.Map(currentLocation, zoom_start=12,tiles=None, tooltip = 'This tooltip will appear on hover')
-    colourMap = GetColourMap(min(TempRange),max(TempRange))
+    colourMap = GetColourMap(min(TempRange),max(TempRange),2)
     #colourMap = cm.linear.PuBuGn_09.scale(0,20).to_step(12)
     
     folium.TileLayer(tiles="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png",attr="Stadia",name='Light').add_to(my_map)
@@ -102,18 +106,8 @@ def RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename):
         shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
 
 
-# https://colorbrewer2.org/#type=diverging&scheme=Spectral&n=9
-def GetColourMap(min,max):
-    if min < 0:
-        min = 0
-    if max > 30:
-        max = 30
-    colormap = cm.LinearColormap(
-                               
-                                ( '#3288bd','#66c2a5','#abdda4','#e6f598','#ffffbf','#fee08b','#fdae61','#f46d43','#d53e4f')
-                                
-                                ,index=None,vmin=min,vmax=max)
-    return colormap
+
+
 
 
 # Creates a Temperature graph based upon dateTime and boxNumber from SQL database
@@ -125,89 +119,55 @@ def GetColourMap(min,max):
 # dateTime = datetime in format of YYYY-MM-DD HH/MM/SS
 # boxNumber = string that is specific to livestock box. e.g. 'PBL v0.4.9' no checks if this is wrong!
 # filename = name to save temperature (usually same as box number)
-def sqlGenerateTempGraph(dateTime, timeRange, filename):
-    config = sql.MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    TemperatureID = "T1"
-    cursor = mydb.cursor()  # define cursor
-    query = "SELECT DateTime,T1,T2,T3,T4,T5,T6,T7,T8 FROM PBL_Uploaded_Data WHERE DateTime BETWEEN %s AND %s;"  # AND `Box Number` = %s;") #construct query
-    cursor.execute(
-        query,
-        (
-            timeRange,
-            dateTime,
-        ),
-    )  # execute query using time range and box number
-    # define array
-    ID = []
-    T1 = []
-    T2 = []
-    T3 = []
-    T4 = []
-    T5 = []
-    T6 = []
-    T7 = []
-    T8 = []
-
-    for (
-        Identifier,
-        Temp1,
-        Temp2,
-        Temp3,
-        Temp4,
-        Temp5,
-        Temp6,
-        Temp7,
-        Temp8,
-    ) in cursor:  # loop through each row and store longitude and latitude under cursor
-        if Temp1 != -127 and Temp1 != 85:
-            T1.append(Temp1)
-        else:
-            T1.append(float("NaN"))
-        if Temp2 != -127 and Temp2 != 85:
-            T2.append(Temp2)
-        else:
-            T2.append(float("NaN"))
-        if Temp3 != -127 and Temp3 != 85:
-            T3.append(Temp3)
-        else:
-            T3.append(float("NaN"))
-        if Temp4 != -127 and Temp4 != 85:
-            T4.append(Temp4)
-        else:
-            T4.append(float("NaN"))
-        if Temp5 != -127 and Temp5 != 85:
-            T5.append(Temp5)
-        else:
-            T5.append(float("NaN"))
-        if Temp6 != -127 and Temp6 != 85:
-            T6.append(Temp6)
-        else:
-            T6.append(float("NaN"))
-        if Temp7 != -127 and Temp7 != 85:
-            T7.append(Temp7)
-        else:
-            T7.append(float("NaN"))
-        if Temp8 != -127 and Temp8 != 85:
-            T8.append(Temp8)
-        else:
-            T8.append(float("NaN"))
-        ID.append(Identifier)
-    if not T1:
-        return
-
+def sqlGenerateTempGraph(boxNumber, dateTime, timeRange, filename):
+    
+    c = []
+    c = GetGraphColours()
+    T1,T2,T3,T4,T5,T6,T7,T8,ID = sql.sqlGetTemperaturesForGraph(boxNumber,dateTime,timeRange,filename)
     plt.plot(
-        ID, T1, ID, T2, ID, T3, ID, T4, ID, T5, ID, T6, ID, T7, ID, T8
+        ID,T1, c[0], 
+        ID,T2, c[1], 
+        ID,T3, c[2],
+        ID,T4, c[3],
+        ID,T5, c[4],
+        ID,T6, c[5],
+        ID,T7, c[6],
+        ID,T8, c[7]
     )  # plot graph - wants to be in own function.
-    plt.xticks(rotation=45)
+    plt.legend(['T1', 'T2','T3', 'T4','T5', 'T6','T7', 'T8'],loc='upper right')
+    myFmt = mdates.DateFormatter('%a %d %b - %-I%p ')
+    locator = mdates.AutoDateLocator(minticks=0, maxticks=1, interval_multiples=True)
+    formatter = mdates.ConciseDateFormatter(locator)
+    formatter.formats = ['%y',  # ticks are mostly years
+                         '%b',       # ticks are mostly months
+                         '%d',       # ticks are mostly days
+                         '%-I%p',    # hrs
+                         '%H:%M',    # min
+                         '%S.%f', ]  # secs
+    formatter.zero_formats = ['%y',  # ticks are mostly years
+                         '%y',       # ticks are mostly months
+                         '%b',       # ticks are mostly days
+                         '%a %d',    # hrs
+                         '%H:%M',    # min
+                         '%S.%f', ]   # secs
+    formatter.offset_formats = ['()', '(%Y)', '(%b-%Y)', '(%d-%b-%Y)', '(%d-%b-%Y)', '(%d-%b-%Y %H:%M)']
+    
+    plt.gca().xaxis.set_major_formatter(formatter)
+    
+    plt.xticks(rotation=0)
     plt.grid()
     plt.title("Livestock Internal Temperature")
-    plt.xlabel("Time || days/hrs")
+    plt.xlabel("Time")
     plt.ylabel("Temperature ˚C")
+    
     plt.savefig(filename, bbox_inches="tight")
-    os.system(
-        "mv " + filename + " ~/flaskapp/static/maps/"
-    )  # move to correct folder so server can find the file
+    
+    
+    if developer is True:
+        systemStatement = "mv "+ filename+" /Users/tom_p/Documents/Arduino/Github/PlowmanTelemetry/static/maps" #Mac
+        os.system(systemStatement)
+    else:
+        shutil.move(os.path.join("/home/ubuntu/PlowmanTelemetry/",filename), os.path.join( "/home/ubuntu/PlowmanTelemetry/static/maps/",filename))
     plt.clf()
 
 
@@ -217,3 +177,54 @@ def LatLonNamedLocation(latitude,longitude):
     location = geolocator.reverse(coords, exactly_one=True)
     name = location.raw["display_name"]
     return name
+
+
+
+
+# https://colorbrewer2.org/#type=diverging&scheme=Spectral&n=9
+def GetColourMap(min,max,colourMapColours):
+    if min < 0:
+        min = 0
+    if max > 30:
+        max = 30
+    if colourMapColours == 1:    
+        colormap = cm.LinearColormap(
+                                ( '#3288bd','#66c2a5','#abdda4','#e6f598','#ffffbf','#fee08b','#fdae61','#f46d43','#d53e4f')
+                                ,index=None,vmin=min,vmax=max)
+    if colourMapColours == 2:    
+        colormap = cm.LinearColormap(
+                                ( '#003f5c','#2f4b7c','#665191','#a05195','#d45087','#f95d6a','#ff7c43','#ffa600')
+                                ,index=None,vmin=min,vmax=max)
+    if colourMapColours == 3:    
+        colormap = cm.LinearColormap(
+                                ( '#3288bd','#66c2a5','#abdda4','#e6f598','#ffffbf','#fee08b','#fdae61','#f46d43','#d53e4f')
+                                ,index=None,vmin=min,vmax=max)
+    return colormap
+
+
+def GetGraphColours():
+    colourSet = []
+    colourSet.append('#003f5c')
+    colourSet.append('#2f4b7c')
+    colourSet.append('#665191')
+    colourSet.append('#a05195')
+    colourSet.append('#d45087')
+    colourSet.append('#f95d6a')
+    colourSet.append('#ff7c43')
+    colourSet.append('#ffa600')
+    return colourSet
+
+
+def AverageTemperatureColour(temperature):
+    colourMap = GetColourMap(0,30,2)
+    colour = colourMap(temperature)
+    return colour
+
+
+
+
+def suffix(d):
+    return 'th' if 11<=d<=13 else {1:'st',2:'nd',3:'rd'}.get(d%10, 'th')
+
+def custom_strftime(format, t):
+    return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))    

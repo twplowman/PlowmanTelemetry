@@ -21,4 +21,16 @@ def test():
     livestockBoxes.append(BoxNumber[0])
   return livestockBoxes
 
-print(test())
+
+
+
+def GetGraphColours():
+    colourSet = []
+    colourSet.append('#003f5c')
+    colourSet.append('#2f4b7c')
+    colourSet.append('#665191')
+    colourSet.append('#a05195')
+    colourSet.append('#d45087')
+    colourSet.append('#f95d6a')
+    colourSet.append('#ff7c43')
+    colourSet.append('#ffa600')

@@ -22,10 +22,17 @@
     <div class = body >
       <div class = grid-layout-main > 
 
+        <!-- Map Container -->
         <div class = card-container id = two >
           <iframe  id="customerMap" src="{{ url_for('static', filename='maps/' + mapHTML + '.html' )}}" alt="Map 002"></iframe>
         </div>
 
+        <!-- Graph Container -->
+        <div class = card-container id = one >
+          <img src="{{ url_for('static', filename='maps/' + mapHTML + '.png' )}}" id="temperature-graph">
+        </div>
+
+        <!-- Customer Data Card -->
         <div class = card-container id = customerDataCard >
           <div class = livestock-details-container > 
             <img src="{{ url_for('static', filename='img/' + mapHTML + '.jpeg' )}}" alt="Plowman Livestock Logo" height="100px" width="auto"> </img>
@@ -38,6 +45,10 @@
                   </svg> 
                 </button>
               </div>
+              <div class = info-container id = tempAveContainer> 
+                <div class = headings id = currentTemperatureAverage>{{currentTemperature}}°</div> 
+              <div class = info-title> Temperature </div> 
+            </div> 
           </div>
 
           <div class = flex-container > 
@@ -54,13 +65,12 @@
               <div class = info-data id = totalDistanceOneWeek> {{weeklyDistance}} miles </div> 
               <div class = info-title> This week </div> 
             </div>   
-            <div class = info-container> 
-              <div class = info-data id = currentTemperatureAverage> {{currentTemperature}}° </div> 
-            <div class = info-title> Temperature </div> 
-            </div> 
+            
+           
           </div>
         </div>
 
+        <!-- Map Container Details -->
         <div class = card-container id = three >
 
           <div class= flex-container> 
@@ -95,6 +105,7 @@
 
         </div>
 
+        <!-- Live Data -->
         <div class = card-container id = six >
           <div class = flex-container > 
             <div class = info-container > 
@@ -116,36 +127,39 @@
           </div>
         </div>
         
+        <!-- More Live Data -->
+      <!--
         <div class = card-container id = five > 
 
           <div class = grid-container > 
-            <!-- row 1 - Titles#1 -->
+            <!- - row 1 - Titles#1 - ->
             <div class = info-title> Current Temperature </div>
             <div class = info-title> Fan Status </div>
             <div class = info-title> Location </div>
-            <!-- row 2 - Info#1 -->
+            <!- - row 2 - Info#1 - ->
             <div class = info-data-large> {{currentTemperature}}˚C </div>
             <div class = info-data-large> {{fanStatus}} </div>
             <div class = info-data-large> {{latitude}} , {{longitude}}</div>
-            <!-- row 3 - Accent#1 -->
-            <!-- accent 1 --><div class = info-data-accent> </div>
-            <!-- accent 2 --><div class = info-data-accent> </div>
+            <!- - row 3 - Accent#1 - ->
+            <!- - accent 1 - -><div class = info-data-accent> </div>
+            <!- - accent 2 - -><div class = info-data-accent> </div>
             <div class = info-data-accent> Latitude      Longitude </div>
-            <!-- row 4 - Title#2 -->
+            <!- - row 4 - Title#2 - ->
             <div class = info-title> Sensors Online </div>
             <div class = info-title> Fan Uptime </div>
-            <!-- title 3 --> <div class = info-title> </div>      
+            <!- - title 3 - -> <div class = info-title> </div>      
             <div class = info-data-large> {{sensorsOnline}}/8</div>
             <div class = info-data-large> {{fanUptime}} </div>
             <div class = info-data-large> {{location}} </div>
-            <!-- accent 1 --><div class = info-data-accent></div>
+            <!- - accent 1 - -><div class = info-data-accent></div>
             <div class = info-data-accent> last 4 weeks </div>
-            <!-- accent 3 --><div class = info-data-accent></div>
+            <!- - accent 3 - -><div class = info-data-accent></div>
           </div>
         </div>
+      -->
 
 
-
+        <!-- Time Range Modal -->
         <div class = time-range-modal> 
           <!-- The Modal -->
           <div id="myModal" class="modal">
@@ -179,14 +193,13 @@
 
             </div> 
       
-          </div>  
-
-
-
+          </div> 
 
 </div>
     </div>
-        
+
+
+
 <script>
 
 //On Load, do this: 
@@ -195,6 +208,9 @@ var dateTimeEndVal = moment().endOf('day')
 
 dateTimeEndVal.format('YYYY-MM-DD HH:mm:S')
 dateTimeStartVal.format('YYYY-MM-DD HH:mm:S')
+
+//document.getElementById("currentTemperatureAverage").setAttribute("style","border-colour: {{temperatureAverageColour}}");
+document.getElementById("currentTemperatureAverage").style.border = "0.15em solid {{temperatureAverageColour}}"
 
 // Date Range Picker function.
 $(function() {
@@ -321,12 +337,14 @@ if (autoRefreshButton.value == "true") {
 
     
 
-        console.log(postData)
+        
         
 
 
-				myTimeout = setTimeout(function(){ window.location.reload(); }, 120000);
+				myTimeout = setTimeout(function(){ window.location.reload(true); }, 120000);
 				localStorage.setItem("refreshValue", "true");
+        
+        window.location.reload(true);
 
 			}
 			else {

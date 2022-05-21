@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 import mysql.connector
 from datetime import datetime, timedelta
+
+
 import sqlconnect as sql
 import maps as maps
 
@@ -270,17 +272,20 @@ def boxRoute(name):
     # sqlOneDayMap(table,dateTimeEnd,dateTime,boxNumber+".html")
     filename = boxNumber+".html"
     maps.RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename)
-    #sqlGenerateTempGraph(dateTimeEnd, dateTimeStart, boxNumber + ".png")
+    maps.sqlGenerateTempGraph(boxNumber, dateTimeEnd, dateTimeStart, boxNumber + ".png")
 
     # get general details
     summaryDetails = GetSummaryDetails(boxNumber)
+    averageTemperature = GetCurrentAverageTemperature(boxNumber)
+    averageTemperatureColour = maps.AverageTemperatureColour(averageTemperature)
+    print (averageTemperatureColour)
 
     # get last packet details
     lastPacket = LastPacketTime(boxNumber, status=True)
 
     templateData = {
         "mapHTML": boxNumber,
-        "currentTemperature": GetCurrentAverageTemperature(boxNumber),
+        "currentTemperature": averageTemperature ,
         "totalDistance": round(summaryDetails[0]),
         "weeklyDistance": round(summaryDetails[1]),
         "lastPacket": lastPacket[0],
@@ -298,7 +303,8 @@ def boxRoute(name):
         "EndTime" : ConvertToDateTime(dateTimeEnd).strftime("%-d %b %y"),
         "EndTimeWD" : ConvertToDateTime(dateTimeEnd).strftime("%a"),
         "EndTimeHr":ConvertToDateTime(dateTimeEnd).strftime("%-I%p"),
-        "AutoRefresh": autoRefresh
+        "AutoRefresh": autoRefresh,
+        "temperatureAverageColour": averageTemperatureColour
     }
     return render_template("CustomerView.html", **templateData)
 
