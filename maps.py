@@ -4,11 +4,9 @@ import folium
 import branca.colormap as cm
 from geopy import Nominatim
 import mysql.connector
-from pyparsing import col
 import sqlconnect as sql
 import os
 import shutil
-import plotly.express as px 
 import matplotlib.dates as mdates
 
 global developer
