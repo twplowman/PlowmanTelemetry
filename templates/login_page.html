@@ -3,15 +3,25 @@
 {% extends "base.html" %}
 		
 <html>
-
+	
 
 {%block content %}	
-	
+<title> Plowman Telemetry || Login </title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/CustomerView.css') }}">
+<link rel="stylesheet" href="/static/css/CustomerView.css">
 <div class = "centeredbody">
-	<div class = "form-inline">
-	<form method="post" style="padding-top: 10%">
-		<p>{{username}}</p>
-		<p><input type="text" name="username" placeholder="{{username}}">  <input type="submit" value="      OK      "></p>
+	<div class = "card-container">
+	<form method="post">
+		<div class = headings style="text-align: center;" >   Please Login  </div>
+        <div class = info-title style="text-align: center;" > Plowman Telemetry  </div>
+		<p><input type="text" name="username" placeholder="Email or Username">  </p>
+		<p><input type="password" name="password" placeholder="Password">  </p>
+		<input type="submit" value="      OK      ">
+
+		<br></br>
+
+		<div class = info-title style="text-align: center;" >   Haven't Registered Yet?  </div>
+		<a class="info-data" href="{{ url_for('register')}}">Register Here</a>
     </form>
 	</div>
 </div>

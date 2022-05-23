@@ -25,14 +25,6 @@ def sqlGetLogin(username):
         return "".join(x)
 
 
-def CheckUsernameInDatabase(username):
-    config = MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()
-    query = "SELECT * FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE UserID = %s;"
-    cursor.execute(query, (username,))
-    for x in cursor:
-        return "".join(x)
 
 def GetTableByID(name):
     config = MysqlConfig()

@@ -1,3 +1,4 @@
+import email
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 import mysql.connector
 from datetime import datetime, timedelta
@@ -5,7 +6,8 @@ from datetime import datetime, timedelta
 
 import sqlconnect as sql
 import maps as maps
-
+import LivestockBoxes as box
+import UserAccess
 
 app = Flask(__name__)
 app.secret_key = "A0Zr98j/3yX R~XHH!jmN]LWX/,?RT"
@@ -70,30 +72,6 @@ def ConvertToReadableTime(dateTime):
     return readableDate
 
 
-def GetSummaryDetails(boxNumber):
-    config = sql.MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()  # define cursor
-    query = "SELECT TotalDistance, WeeklyDistance, Customer, CustomerBoxNumber, LastPacketDistance, SensorsOnline FROM PBL_Telemetry_Summary WHERE PBL_Telemetry_Summary.BoxNumber = %s;"
-    cursor.execute(query, (boxNumber,))
-    result = []
-    for (
-        TotalDistance,
-        WeeklyDistance,
-        Customer,
-        CustomerBoxNumber,
-        LastPacketDistance,
-        SensorsOnline,
-    ) in cursor:
-        result = [
-            TotalDistance,
-            WeeklyDistance,
-            Customer,
-            CustomerBoxNumber,
-            LastPacketDistance,
-            SensorsOnline,
-        ]
-    return result
 
 def GetAllBoxNumbers():
     config = sql.MysqlConfig()
@@ -107,42 +85,22 @@ def GetAllBoxNumbers():
     return livestockBoxes
 
 
-# Queries the database for specific data related to chosen livestock box
-# Last Packet
-# Temperature
-def GetCurrentAverageTemperature(boxNumber):
-    config = sql.MysqlConfig()
-    mydb = mysql.connector.connect(**config)
-    cursor = mydb.cursor()  # define cursor
-    query = "SELECT T1,T2,T3,T4,T5,T6,T7,T8 FROM PBL_Uploaded_Data WHERE  `Box Number` = %s ORDER BY DateTime DESC LIMIT 1  ;"  # construct query
-    cursor.execute(query, (boxNumber,))
-    data = 0
-    for x in cursor:
-        i = 0
-        counter = 0
-        while i < 8:
-            if x[i] != -127 and x[i] != 85:
-                data = data + x[i]
-                counter = counter + 1
-            i = i + 1
-        data = round(data / counter, 1)
-    return data
 
 
 def CheckUsernameInSession(name):
     if "username" not in session:
-            return redirect(url_for("login"))
-
-    if session.get("username") != name:
-        return redirect(url_for("AccessDenied"))
+        return False
+    sessionUsername = (session.get("username"))
+    if sessionUsername != name:
+        return redirect(url_for("boxRoute"))
 
 
 @app.route("/")
 def index():
     if "username" in session:
         username = session.get("username")
-        return redirect(url_for("boxRoute", name=username))
-    return redirect(url_for("login"))
+        return redirect(url_for("boxRoute"))
+    return redirect(url_for("login",response="Please login"))
 
 
 
@@ -195,9 +153,9 @@ def rendertemplate():
 def BoxRedirect():
     if request.method == "GET":
         if "username" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("login",response="Please login"))
         username = session.get("username")
-        return redirect(url_for("boxRoute", name=username))
+        return redirect(url_for("boxRoute"))
 
 
 @app.route("/Summary")
@@ -213,7 +171,7 @@ def summary():
         if lastPacket is None:
             lastPacket = [0,0,0]
         print(lastPacket)
-        summaryDetails.append([GetSummaryDetails(BoxNumber),GetCurrentAverageTemperature(BoxNumber),maps.LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
+        summaryDetails.append([box.GetSummaryDetails(BoxNumber),box.GetCurrentAverageTemperature(BoxNumber),maps.LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
         print (summaryDetails)
     print (summaryDetails)
     
@@ -226,9 +184,10 @@ def UpdateSessionData():
 
     
 
-@app.route("/box/<string:name>", methods=["GET", "POST"])
-def boxRoute(name):
-    CheckUsernameInSession(name)
+@app.route("/live-tracking", methods=["GET", "POST"])
+def boxRoute():
+    if CheckUsernameInSession(session.get("username")) is False:
+        return redirect(url_for("login"))
 
     if request.method == "POST":
 
@@ -263,8 +222,9 @@ def boxRoute(name):
 
     # defining table to query - We always query the same table now.
     # table = GetTableByID(name)
-    boxNumber = name
-
+    boxNumber = session.get("username")
+    if boxNumber is None:
+            return "Account needs to be associated with correct Livestock box. Please contact Administrator"
     # Getting datetime
     
 
@@ -275,14 +235,14 @@ def boxRoute(name):
     maps.sqlGenerateTempGraph(boxNumber, dateTimeEnd, dateTimeStart, boxNumber + ".png")
 
     # get general details
-    summaryDetails = GetSummaryDetails(boxNumber)
-    averageTemperature = GetCurrentAverageTemperature(boxNumber)
+    summaryDetails = box.GetSummaryDetails(boxNumber)
+    averageTemperature = box.GetCurrentAverageTemperature(boxNumber)
     averageTemperatureColour = maps.AverageTemperatureColour(averageTemperature)
     print (averageTemperatureColour)
 
     # get last packet details
     lastPacket = LastPacketTime(boxNumber, status=True)
-
+        
     templateData = {
         "mapHTML": boxNumber,
         "currentTemperature": averageTemperature ,
@@ -312,11 +272,17 @@ def boxRoute(name):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        session["username"] = request.form["username"]
-        username = session.get("username")
+        username = request.form["username"]
+        password = request.form["password"]
 
-        if sql.CheckUsernameInDatabase(username) is None:
-            return redirect(url_for("AccessDenied"))
+        if UserAccess.Login(username,password) is False:
+            return redirect(url_for("login",response="Incorrect Username or Password"))
+
+        # We have now authenticated, so lets get the Box ID (temporary)
+        userID = UserAccess.GetUserID(username)
+        session["username"] = userID
+        if userID is None:
+            return "Account needs to be associated with correct Livestock box. Please contact Administrator"
 
 # required format 'YYYY-MM-DD HH:mm:S'
         dateTimeStart = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
@@ -324,19 +290,13 @@ def login():
         session["dateTimeStart"] = dateTimeStart
         session["dateTimeEnd"] = dateTimeEnd
         session["autoRefresh"] = "true"
-        return redirect(url_for("boxRoute", name=username))
+        return redirect(url_for("boxRoute"))
     if "username" in session:
         session.pop("username", None)
         username = "Logged Out"
     else:
         username = "Not Logged In"
-    return render_template("login_page.html", username=username)
-
-
-@app.route("/formtest", methods=["GET", "POST"])
-def formtest():
-    return "hello"
-
+    return render_template("login_page.html", response="Please login")
 
 @app.route("/logout")
 def logout():
@@ -344,6 +304,16 @@ def logout():
     session.pop("username", None)
     return redirect(url_for("index"))
 
+
+@app.route("/register",  methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        if UserAccess.CreateAccount(request.form["email"],request.form["username"],request.form["password"],request.form["firstName"],request.form["lastName"]) is True:
+            return "Successfully created account"
+        else:
+            return "Error creating account"
+    if request.method == "GET":
+        return render_template("register_page.html")
 
 @app.route("/accessDenied")
 def AccessDenied():
@@ -359,3 +329,4 @@ app.debug = True
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0",port="8080")
+   # session.permanent = True    

@@ -93,8 +93,7 @@ header
 	flex-flow: row wrap;
 	align-items: center;
 	text-align: center;
-	left: 20%;
-	right: 20%;
+	width: auto;
 	color: aliceblue;
 	background-color: #7B7B7B;	
 }

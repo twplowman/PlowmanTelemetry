@@ -12,8 +12,7 @@ import matplotlib.dates as mdates
 global developer
 developer = False
 
-class LivestockBox:
-    boxNumber = "PBL003"
+
 
 matplotlib.use("Agg")
 
