@@ -5,7 +5,7 @@ import branca.colormap as cm
 from geopy import Nominatim
 import mysql.connector
 import pandas
-import SqlConnect as sql
+import sqlconnect as sql
 import os
 import shutil
 import matplotlib.dates as mdates
@@ -79,8 +79,8 @@ def RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename):
     #colourMap = cm.linear.PuBuGn_09.scale(0,20).to_step(12)
     
     
-    RenderMapFolium(currentLocation,dataRange,TempRange,colourMap,filename)
-    #RenderMapKepler(currentLocation,df,TempRange,colourMap,filename)
+    #RenderMapFolium(currentLocation,dataRange,TempRange,colourMap,filename)
+    RenderMapKepler(currentLocation,df,TempRange,colourMap,filename)
     
 
     if developer is True:
@@ -92,42 +92,16 @@ def RenderMap(dateTimeEnd,dateTimeStart,boxNumber,filename):
 
 def RenderMapKepler(currentLocation,dataRange,TempRange,colourMap,filename):
     
-    config = {
-  "version": "v1",
-  "config": {
-    "visState": {
-      "filters": [],
-      "layers": [],
-      "interactionConfig": {}
-    },
-    "mapState": {
-      "bearing": 0,
-      "dragRotate": True,
-      "latitude": currentLocation[0],
-      "longitude": currentLocation[1],
-      "pitch": 0,
-      "zoom": 6.655984704565685,
-      "isSplit": False
-    },
-    "mapStyle": {
-      "styleType": "light",
-      "topLayerGroups": {},
-      "visibleLayerGroups": {
-        "label": True,
-        "road": True,
-        "border": True,
-        "building": False,
-        "water": True,
-        "land": True
-      }
-    }
-  }
-}
+    config = {'config': {
+        'mapState': {
+            'latitude': currentLocation[0],
+            'longitude': currentLocation[1],
+            'zoom': 12.32053899007826
+        }}}
     
     
     myMap = keplergl.KeplerGl(height = 500,show_docs=False)
     myMap.add_data(data=dataRange, name='Route')
-    myMap.add_data(data=pandas.DataFrame({"Latitude" : currentLocation[0],'Longitude': currentLocation[1]},index=[0]), name='Location')
 
     myMap.save_to_html(file_name=filename, config=config, read_only=True)
 

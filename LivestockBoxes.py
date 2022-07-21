@@ -1,5 +1,5 @@
 
-import sqlconnect as sql
+import SqlConnect as sql
 import mysql.connector
 
 
@@ -57,14 +57,13 @@ def GetSummaryDetails(boxNumber):
         LastPacketDistance,
         SensorsOnline,
     ) in cursor:
-        result = [
-            TotalDistance,
+        result = [TotalDistance,
             WeeklyDistance,
             Customer,
             CustomerBoxNumber,
             LastPacketDistance,
-            SensorsOnline,
-        ]
+            SensorsOnline]
+        
     return result
 
 # Queries the database for specific data related to chosen livestock box

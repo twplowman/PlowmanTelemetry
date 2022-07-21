@@ -1,7 +1,7 @@
 
 from passlib.hash import sha256_crypt
 
-import sqlconnect as sql
+import SqlConnect as sql
 import mysql.connector
 
 def CheckUsernameInDatabase(username):
@@ -15,6 +15,7 @@ def CheckUsernameInDatabase(username):
     else:
         return response[0][0]
 
+
 def CheckEmailInDatabase(emailAddress):
     config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
@@ -25,6 +26,34 @@ def CheckEmailInDatabase(emailAddress):
         return
     else:
         return response[0][0]
+
+def GetUserData(username=None,email=None):
+    '''
+    Authentication should have already happened. 
+    Optional arguments username or email.
+    Returns a list [email,username]
+    '''
+    config = sql.MysqlConfig()
+    mydb = mysql.connector.connect(**config)
+    cursor = mydb.cursor()
+    if username is not None:
+        cursor.execute("SELECT Email FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE username = '%s'" % (username))
+        response = cursor.fetchall()
+        if len(response) == 0 :
+            return
+        else:
+            return [response[0][0],username]
+    if email is not None:
+        cursor.execute("SELECT Username FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE Email = '%s'" % (email))
+        response = cursor.fetchall()
+        if len(response) == 0 :
+            return
+        else:
+            return [email,response[0][0]]
+    
+    
+
+
 
 def CreateAccount(emailAddress, username, password,firstName,lastName):
     passwordToStore = sha256_crypt.hash(password)
@@ -53,6 +82,8 @@ def CreateAccount(emailAddress, username, password,firstName,lastName):
        pass
     
 
+
+
 def GetPassword(loginMethod,loginValue):
     '''
     Choice to get Password via Email Address or Username
@@ -75,14 +106,14 @@ def GetPassword(loginMethod,loginValue):
         return response[0][0]
 
 
-def GetUserID(loginValue):
+def GetUserID(username=None,email=None):
     config = sql.MysqlConfig()
     mydb = mysql.connector.connect(**config)
     cursor = mydb.cursor()
-    if CheckEmailInDatabase(loginValue) is not None:
-        cursor.execute("SELECT UserID FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE Email = '%s'" % (loginValue))
-    if CheckUsernameInDatabase(loginValue) is not None:
-        cursor.execute("SELECT UserID FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE Username = '%s'" % (loginValue))
+    if email is not None:
+        cursor.execute("SELECT UserID FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE Email = '%s'" % (email))
+    if username is not None:
+        cursor.execute("SELECT UserID FROM plowmantelemetryschema.PBL_Telemetry_UserAccess WHERE Username = '%s'" % (username))
     response = cursor.fetchall()
     if len(response) == 0 :
         return
@@ -91,26 +122,29 @@ def GetUserID(loginValue):
 
 
 def Login(loginValue,password):
-    
+    '''
+    Queries password based on username or email.
+    * Incorrect Password (or no username/email):
+    Returns none
+    * Correct Password:
+    Returns a list [email,username]
+    '''
+
     if CheckEmailInDatabase(loginValue) is not None:
         passwordfromDB = GetPassword(1,loginValue)
         if sha256_crypt.verify(password,passwordfromDB):
-            return True
+            # password was verified via email, lets get all the user data and return to the app.
+            return GetUserData(email=loginValue)
         else:
-            return False 
+            return None 
 
     if CheckUsernameInDatabase(loginValue) is not None:
         passwordfromDB = GetPassword(2,loginValue)   
         if sha256_crypt.verify(password,passwordfromDB):
-            return True
+            return GetUserData(username=loginValue)
         else:
-            return False 
+            return None 
     
     print("Email or Username not in Database")
-    return False
-    
+    return None
 
-
-#print(CheckUsernameInDatabase("PBL002"))
-#CreateAccount("tom.plowman@me.comc","dexterwatson","bR0m3lIad2022!!")
-Login("tom.plowman@me.comc","bR0m3lIad202dasfaf2!!")

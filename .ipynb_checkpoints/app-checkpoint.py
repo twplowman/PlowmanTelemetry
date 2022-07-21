@@ -1,15 +1,88 @@
-from tkinter import E
+import email
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
+import mysql.connector
+from datetime import datetime, timedelta
 
-import SqlConnect as sql
-import Maps as maps
+
+import sqlconnect as sql
+import maps as maps
 import LivestockBoxes as box
 import UserAccess
-import DatetimeConverter as dt
 
 app = Flask(__name__)
 app.secret_key = "A0Zr98j/3yX R~XHH!jmN]LWX/,?RT"
 
+# Queries SQL database and finds last row for specified box number. Converts to date or checks if online/offline
+# boxNumber = string that is specific to livestock box. e.g. 'PBL v0.4.9' no checks if this is wrong!
+# **kwargs:
+#          - dateformat. if set as true, will return last packet in format of DD/MM/YYYY HH:MM:SS
+#          - status.     if set as true, will return last packet in readable format AND ONLINE/OFFLINE (used on html)
+# returns datetime in format of '%Y-%m-%d %H:%M:%S' as standard.
+def LastPacketTime(boxNumber, **kwargs):
+    config = sql.MysqlConfig()
+    mydb = mysql.connector.connect(**config)
+    cursor = mydb.cursor()  # define cursor
+    query = "SELECT DateTime, Latitude, Longitude FROM PBL_Uploaded_Data WHERE  `Box Number` = %s ORDER BY DateTime DESC LIMIT 1  ;"  # construct query
+    cursor.execute(query, (boxNumber,))
+    for result in cursor:
+        result = list(result)
+        if kwargs.get("dateformat"):  # probably will be unused
+            readableDate = ConvertToReadableTime((result[0]))
+            return readableDate
+        if kwargs.get("status"):  # if we want to check ONLINE/OFFLINE
+            readableDate = ConvertToReadableTime((result[0]))
+            if PacketAge(
+                5, result[0]
+            ):  # Pass in 20 minutes, we can expose and change this later
+                result[0] = readableDate + " || ONLINE "
+            else:
+                result[0] = readableDate + " || OFFLINE "
+            return result
+        else:
+            return result
+
+# compares date (in a datetime format of '%Y-%m-%d %H:%M:%S') against current server time.
+# timeMinutes = integer time in minutes
+# dateTime = time to evaluate (e.g. last packet from sql server)
+# returns true or false based upon defined allowable range in minutes.
+def PacketAge(timeMinutes, dateTime):
+    difference = (datetime.utcnow() - dateTime) - timedelta(minutes=timeMinutes)
+    # print(difference)
+    if difference < timedelta(0):
+        return True
+    else:
+        return False
+
+
+# Converts readable format into datetime type.
+# '%d/%m/%Y %H:%M:%S' to '%Y-%m-%d %H:%M:%S'
+# readableDate = date time in format of DD/MM/YYYY HH:MM:SS (e.g. time from picos)
+# returns dateTime = datetime in format of YYYY-MM-DD HH/MM/SS (e.g. datetime from sql server)
+def ConvertToDateTime(readableDate):
+    dateTime = datetime.strptime(readableDate, "%Y-%m-%d %H:%M:%S")
+    return dateTime
+
+
+# Converts datetime into more readable format
+# '%Y-%m-%d %H:%M:%S' to '%d/%m/%Y %H:%M:%S'
+# dateTime = date time in format of YYYY-MM-DD HH/MM/SS (e.g. datetime from sql server)
+# returns readableDate
+def ConvertToReadableTime(dateTime):
+    readableDate = datetime.strftime(dateTime, "%d/%m/%Y %H:%M:%S")
+    return readableDate
+
+
+
+def GetAllBoxNumbers():
+    config = sql.MysqlConfig()
+    mydb = mysql.connector.connect(**config)
+    cursor = mydb.cursor()
+    query = "SELECT BoxNumber FROM PBL_Telemetry_Summary;"
+    cursor.execute(query)
+    livestockBoxes = []
+    for BoxNumber in cursor:
+        livestockBoxes.append(BoxNumber[0])
+    return livestockBoxes
 
 
 
@@ -84,66 +157,31 @@ def BoxRedirect():
         return redirect(url_for("boxRoute"))
 
 
-@app.route("/summary")
+@app.route("/Summary")
 def summary():
-    if "username" not in session:
-        return redirect(url_for("login",response="Please login"))
     
-    emailAddress = session.get("email")
-
-    #check access to Boxes
-    userBoxes = sql.GetAllUsersBoxes(emailAddress)
     #work out number of columns in summary table
-    livestockBoxes = sql.GetAllBoxNumbers()
+    livestockBoxes = GetAllBoxNumbers()
     #get summary details
     print(livestockBoxes)
-    
-    
-    result = []
-    customer = []
-    boxNumber = []
-    temperature = []
-    location = []
-    latitude =[]
-    longitude = []
-    sensors = []
-    packets = []
-    
-    
-    [["TotalDistance, WeeklyDistance, Customer, CustomerBoxNumber,LastPacketDistance,SensorsOnline,Average Temperature"]]
-    for BoxNumber in userBoxes:
-        lastPacket = sql.LastPacketTime(BoxNumber, status=True)
-        summaryDetails = box.GetSummaryDetails(BoxNumber)
-        currentAverageTemperature = box.GetCurrentAverageTemperature(BoxNumber)
-        currentLocation = maps.LatLonNamedLocation(lastPacket[1],lastPacket[2])
+    summaryDetails = [["TotalDistance, WeeklyDistance, Customer, CustomerBoxNumber,LastPacketDistance,SensorsOnline,Average Temperature"]]
+    for BoxNumber in livestockBoxes:
+        lastPacket = LastPacketTime(BoxNumber, status=True)
         if lastPacket is None:
-            lastPacket = [0,    0,0]
-        customer.append(summaryDetails[2])
-        boxNumber.append(BoxNumber)
-        temperature.append(currentAverageTemperature)
-        location.append(currentLocation)
-        latitude.append(lastPacket[1])
-        longitude.append(lastPacket[2])
-        sensors.append(summaryDetails[5])
-        packets.append(lastPacket[0])
+            lastPacket = [0,0,0]
+        print(lastPacket)
+        summaryDetails.append([box.GetSummaryDetails(BoxNumber),box.GetCurrentAverageTemperature(BoxNumber),maps.LatLonNamedLocation(lastPacket[1],lastPacket[2])]) 
+        print (summaryDetails)
+    print (summaryDetails)
     
-    templateData = {
-        "customer": customer,
-        "customerBoxNumber": boxNumber,
-        "currentTemperature": temperature,
-        "latitude": latitude,
-        "longitude": longitude,
-        "sensorsOnline": sensors,
-        "location" : location,
-        "lastPacket": packets,
-    }
+    return jsonify(summaryDetails)
 
-
-    return render_template("summary.html",len = len(customer), **templateData)
 
 @app.route("/updateSessionData", methods = ["POST"])
 def UpdateSessionData():
     CheckUsernameInSession()
+
+    
 
 @app.route("/live-tracking", methods=["GET", "POST"])
 def boxRoute():
@@ -168,8 +206,8 @@ def boxRoute():
 
             #something is wrong here
             if updateType == "Ajax":
-                dateTimeStart = dt.GetTodaysDate()
-                dateTimeEnd = dt.GetTodaysDate(hour=23,minute=59,second=59)
+                dateTimeStart = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+                dateTimeEnd = datetime.utcnow().replace(hour=23, minute=59, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
                 session["dateTimeStart"] = dateTimeStart
                 session["dateTimeEnd"] = dateTimeEnd
                 session["autoRefresh"] = request.form.get('autoRefresh') #think this is done client side at the moment
@@ -183,7 +221,7 @@ def boxRoute():
 
     # defining table to query - We always query the same table now.
     # table = GetTableByID(name)
-    boxNumber = session.get("userID")
+    boxNumber = session.get("username")
     if boxNumber is None:
             return "Account needs to be associated with correct Livestock box. Please contact Administrator"
     # Getting datetime
@@ -202,7 +240,7 @@ def boxRoute():
     print (averageTemperatureColour)
 
     # get last packet details
-    lastPacket = sql.LastPacketTime(boxNumber, status=True)
+    lastPacket = LastPacketTime(boxNumber, status=True)
         
     templateData = {
         "mapHTML": boxNumber,
@@ -218,12 +256,12 @@ def boxRoute():
         "sensorsOnline": summaryDetails[5],
         "fanUptime": "",
         "location": maps.LatLonNamedLocation(lastPacket[1],lastPacket[2]),
-        "StartTime" : dt.ConvertToDateTime(dateTimeStart).strftime("%-d %b %y"),
-        "StartTimeWD" : dt.ConvertToDateTime(dateTimeStart).strftime("%a"),
-        "StartTimeHr":dt.ConvertToDateTime(dateTimeStart).strftime("%-I%p"),
-        "EndTime" : dt.ConvertToDateTime(dateTimeEnd).strftime("%-d %b %y"),
-        "EndTimeWD" : dt.ConvertToDateTime(dateTimeEnd).strftime("%a"),
-        "EndTimeHr": dt.ConvertToDateTime(dateTimeEnd).strftime("%-I%p"),
+        "StartTime" : ConvertToDateTime(dateTimeStart).strftime("%-d %b %y"),
+        "StartTimeWD" : ConvertToDateTime(dateTimeStart).strftime("%a"),
+        "StartTimeHr":ConvertToDateTime(dateTimeStart).strftime("%-I%p"),
+        "EndTime" : ConvertToDateTime(dateTimeEnd).strftime("%-d %b %y"),
+        "EndTimeWD" : ConvertToDateTime(dateTimeEnd).strftime("%a"),
+        "EndTimeHr":ConvertToDateTime(dateTimeEnd).strftime("%-I%p"),
         "AutoRefresh": autoRefresh,
         "temperatureAverageColour": averageTemperatureColour
     }
@@ -233,20 +271,21 @@ def boxRoute():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        loginMethod = request.form["username"] #this could be a username or an email address - we will always use email
+        username = request.form["username"]
         password = request.form["password"]
-        userData = UserAccess.Login(loginMethod,password)
-        if userData is None:
+
+        if UserAccess.Login(username,password) is False:
             return redirect(url_for("login",response="Incorrect Username or Password"))
 
-        # We have now authenticated with either username or email, so lets store the user data in the session
-        session["email"] = userData[0]
-        session["username"] = userData[1]
-        session["userID"] = UserAccess.GetUserID(email=userData[0])
-        
-        # required format 'YYYY-MM-DD HH:mm:S'
-        dateTimeStart = dt.GetTodaysDate()
-        dateTimeEnd = dt.GetTodaysDate(hour=23,minute=59,second=59)
+        # We have now authenticated, so lets get the Box ID (temporary)
+        userID = UserAccess.GetUserID(username)
+        session["username"] = userID
+        if userID is None:
+            return "Account needs to be associated with correct Livestock box. Please contact Administrator"
+
+# required format 'YYYY-MM-DD HH:mm:S'
+        dateTimeStart = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+        dateTimeEnd = datetime.utcnow().replace(hour=23, minute=59, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
         session["dateTimeStart"] = dateTimeStart
         session["dateTimeEnd"] = dateTimeEnd
         session["autoRefresh"] = "true"

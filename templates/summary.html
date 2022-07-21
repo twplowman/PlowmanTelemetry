@@ -1,0 +1,60 @@
+<!doctype html>
+{% extends "base.html" %}
+
+
+<html>
+    {%block content %}
+
+
+    <title> SUMMARY PAGE </title>
+    <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/CustomerView.css') }}">
+        <link rel="stylesheet" href="/static/css/CustomerView.css">
+        <link rel="stylesheet" href="/static/css/extra.css">
+        <link rel="stylesheet" href="/static/css/main.css">
+    <div class = body >
+        <div class = grid-layout-main > 
+            {%for i in range(0, len)%}
+
+            <!-- Customer Data Card -->
+            <div class = card-container id = customerDataCard >
+                <div class = livestock-details-container > 
+                    <div class = info-container > 
+                        <div class = headings id = customerName >   {{customer[i]}}  </div>
+                        <div class = info-title id = customerBoxNumber > Box # {{customerBoxNumber[i]}}  </div>
+                    </div>
+                    <div class = info-container id = tempAveContainer> 
+                        <div class = headings id = currentTemperatureAverage>{{currentTemperature[i]}}°</div> 
+                        <div class = info-title> Temperature </div> 
+                    </div>
+
+                <div class = flex-container > 
+                    <div class = info-container > 
+                        <div class = info-data id = sensorsOnline > {{sensorsOnline[i]}} / 8  </div> 
+                        <div class = info-title> Sensors Online </div> 
+                    </div>
+                    <div class = info-container> 
+                        <div class = info-data id = currentLatLon> {{latitude[i]}},{{longitude[i]}} </div> 
+                        <div class = info-title> Latitude/Longitude </div> 
+                    </div>   
+                    <div class = info-container> 
+                        <div class = info-data id = lastPacketTime> {{lastPacket[i]}} </div> 
+                        <div class = info-title> Last Packet </div>
+                    </div>
+                    <div class = info-container> 
+                        <div class = info-data id = namedLocation> {{location[i]}} </div> 
+                        <div class = info-title> Location </div> 
+                    </div>  
+                    </div>
+                </div>
+            </div>
+
+            {%endfor%}
+
+        </div>
+    </div>
+
+
+
+    {%endblock%}
+</html>
