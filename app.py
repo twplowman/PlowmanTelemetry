@@ -1,4 +1,3 @@
-from tkinter import E
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 
 import SqlConnect as sql
