@@ -1,5 +1,5 @@
 
-import SqlConnect as sql
+import sqlconnect as sql
 import mysql.connector
 
 

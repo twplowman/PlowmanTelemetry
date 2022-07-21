@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, session, redirect, render_template, url_for, request
 
-import SqlConnect as sql
-import Maps as maps
+import sqlconnect as sql
+import maps as maps
 import LivestockBoxes as box
 import UserAccess
 import DatetimeConverter as dt

@@ -1,7 +1,7 @@
 
 from passlib.hash import sha256_crypt
 
-import SqlConnect as sql
+import sqlconnect as sql
 import mysql.connector
 
 def CheckUsernameInDatabase(username):

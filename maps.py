@@ -5,7 +5,7 @@ import branca.colormap as cm
 from geopy import Nominatim
 import mysql.connector
 import pandas
-import SqlConnect as sql
+import sqlconnect as sql
 import os
 import shutil
 import matplotlib.dates as mdates
